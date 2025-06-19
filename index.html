@@ -8,17 +8,17 @@
         body {
             margin: 0;
             padding: 0;
-            background: #000000;
+            background: linear-gradient(#002b55, #000000);
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: Arial, Helvetica, sans-serif;
             color: #fff;
             position: relative; /* Needed for absolute positioning of overlay */
         }
         canvas {
-            background: #000000;
+            background: #001b33;
             box-shadow: 0 0 30px rgba(170, 204, 255, 0.2);
         }
 
@@ -30,8 +30,8 @@
             transform: translate(-50%, -50%);
             width: 500px; /* Adjust as needed */
             max-height: 90vh; /* Allow scrolling if many players */
-            background: rgba(0, 0, 0, 0.95);
-            border: 2px solid #ff4444;
+            background: rgba(0, 0, 64, 0.95);
+            border: 2px solid #44aaff;
             padding: 20px;
             box-sizing: border-box;
             display: flex;
@@ -41,13 +41,13 @@
             text-align: center;
             z-index: 100; /* Above the canvas */
             color: #fff;
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: Arial, Helvetica, sans-serif;
             overflow-y: auto; /* Enable scrolling for ranking list */
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+            box-shadow: 0 0 30px rgba(68, 170, 255, 0.3);
         }
 
         #ranking-overlay h2 {
-            color: #ff4444;
+            color: #44aaff;
             font-size: 32px;
             margin-bottom: 20px;
         }
@@ -81,19 +81,19 @@
         }
 
         #ranking-overlay button {
-            background: #333333;
-            color: #ffff00;
+            background: #005544;
+            color: #00ff99;
             font-size: 20px;
             padding: 10px 20px;
-            border: 2px solid #ffff00;
+            border: 2px solid #00ff99;
             cursor: pointer;
             transition: background-color 0.2s, color 0.2s;
             margin: 5px;
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         #ranking-overlay button:hover {
-            background-color: #555555;
+            background-color: #008855;
             color: #fff;
         }
 
@@ -109,12 +109,12 @@
         #ranking-overlay #top10-list {
             width: 100%;
             margin-top: 20px;
-            border-top: 1px dashed #555;
+            border-top: 1px dashed #44aaff;
             padding-top: 15px;
         }
 
         #ranking-overlay #top10-list h3 {
-            color: #33ccff;
+            color: #44aaff;
             font-size: 22px;
             margin-bottom: 10px;
         }
@@ -124,7 +124,7 @@
             padding: 0;
             max-height: 250px; /* Limit height for scroll */
             overflow-y: auto;
-            border: 1px solid #33ccff55;
+            border: 1px solid #44aaff55;
             padding: 10px;
             background-color: rgba(0,0,0,0.3);
         }
@@ -148,8 +148,28 @@
         }
 
         #ranking-overlay #top10-list li span:last-child {
-            color: #ffff00; /* Hours */
+            color: #00ff99; /* Hours */
             font-style: italic;
+        }
+
+        #ranking-overlay #upgrades-list {
+            width: 100%;
+            margin-top: 20px;
+            border-top: 1px dashed #44aaff;
+            padding-top: 15px;
+        }
+        #ranking-overlay #upgrades-list h3 {
+            color: #44aaff;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        #ranking-overlay #upgrades-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        #ranking-overlay #upgrades-list li {
+            font-size: 16px;
+            padding: 3px 0;
         }
     </style>
 </head>
@@ -426,7 +446,7 @@
 
                 // Start Button
                 const startButton = this.add.text(width / 2, height / 2, 'START', {
-                    fontSize: '40px', color: '#ffff00', fontFamily: 'Consolas, Courier New, monospace', backgroundColor: '#333333', padding: { x: 20, y: 10 }
+                    fontSize: '40px', color: '#00ff99', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: '#333333', padding: { x: 20, y: 10 }
                 }).setOrigin(0.5).setInteractive({ cursor: 'pointer' });
 
                 startButton.on('pointerover', () => startButton.setBackgroundColor('#555555'));
@@ -441,7 +461,7 @@
                 // --- Evident Credits ---
                 const creditY = height - 50;
 
-                const creditTextPart1 = 'Maked by Júlia Klee | Help my original ';
+                const creditTextPart1 = 'Maked by Jair Edinger | Help my original ';
                 const creditTextPart2 = 'clicking here';
                 
                 // Use invisible text objects to calculate the width for centering
@@ -584,7 +604,6 @@
                 platformPositions.forEach(p => {
                     const plat = this.platforms.create(p.x, p.y).setBodySize(p.w, p.h).setDisplaySize(p.w,p.h).setVisible(false);
                     platGraphics.fillRect(plat.x-plat.displayWidth/2, plat.y-plat.displayHeight/2, plat.displayWidth, plat.displayHeight);
-                    platGraphics.strokeRect(plat.x-plat.displayWidth/2, plat.y-plat.displayHeight/2, plat.displayWidth, plat.displayHeight);
                     for(let i = 0; i < p.w/10; i++) {
                         platGraphics.fillStyle(0x334455, Math.random()*0.5).fillCircle(p.x - p.w/2 + Math.random()*p.w, p.y-p.h/2+Math.random()*p.h, Math.random()*3+1);
                     }
@@ -738,6 +757,11 @@
                         <div id="submission-message"></div>
                     </div>
 
+                    <div id="upgrades-list">
+                        <h3>Your Upgrades</h3>
+                        <ul id="upgrades-ul"></ul>
+                    </div>
+
                     <div id="top10-list">
                         <h3>TOP 10 MONOCHROME SURVIVORS</h3>
                         <ul id="leaderboard-ul">
@@ -755,8 +779,18 @@
                 const submitScoreBtn = document.getElementById('submitScoreBtn');
                 const submissionMessage = document.getElementById('submission-message');
                 const leaderboardUl = document.getElementById('leaderboard-ul');
+                const upgradesUl = document.getElementById('upgrades-ul');
                 const restartGameBtn = document.getElementById('restartGameBtn');
                 const mainMenuFromRankBtn = document.getElementById('mainMenuFromRankBtn');
+
+                for (const [id, level] of Object.entries(playerStats.ownedUpgrades)) {
+                    if (level > 0) {
+                        const upgrade = UPGRADES.find(u => u.id === id);
+                        const li = document.createElement('li');
+                        li.textContent = `${upgrade ? upgrade.name : id} LV.${level}`;
+                        upgradesUl.appendChild(li);
+                    }
+                }
 
                 // Add event listeners
                 submitScoreBtn.onclick = async () => {
@@ -884,7 +918,7 @@
                 const overlay = this.add.graphics().fillStyle(0x000000, 0.8).fillRect(0, 0, config.width, config.height).setDepth(99);
                 container.add(overlay); container.x = 0; container.y = 0;
 
-                const title = this.add.text(config.width/2, config.height/2 - dialogHeight/2 + 50, 'LEVEL UP! CHOOSE AN UPGRADE', { fontSize: '28px', color: '#ffff00', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
+                const title = this.add.text(config.width/2, config.height/2 - dialogHeight/2 + 50, 'LEVEL UP! CHOOSE AN UPGRADE', { fontSize: '28px', color: '#00ff99', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
                 container.add(title);
                 
                 choices.forEach((upgrade, i) => {
@@ -904,7 +938,7 @@
                     const nameText = this.add.text(-330, -cardHeight/2 + 15, upgrade.name, { fontSize: '24px', color: upgrade.color, fontStyle: 'bold' });
                     const descText = this.add.text(-330, -cardHeight/2 + 50, upgrade.desc, { fontSize: '18px', color: '#cccccc', wordWrap: { width: 450 } });
                     const rarityText = this.add.text(330, -cardHeight/2 + 15, upgrade.rarity.toUpperCase(), { fontSize: '16px', color: upgrade.color, fontStyle: 'italic' }).setOrigin(1, 0);
-                    const levelText = this.add.text(330, cardHeight/2 - 15, `LV. ${currentLevel}`, { fontSize: '20px', color: '#ffff00', fontStyle: 'bold' }).setOrigin(1, 1);
+                    const levelText = this.add.text(330, cardHeight/2 - 15, `LV. ${currentLevel}`, { fontSize: '20px', color: '#00ff99', fontStyle: 'bold' }).setOrigin(1, 1);
                     card.add([nameText, descText, rarityText, levelText]);
                     const hitArea = this.add.zone(0, 0, 700, cardHeight).setInteractive({ cursor: 'pointer' });
                     card.add(hitArea);
@@ -948,7 +982,7 @@
                 this.hpText = this.add.text(152, 14, '', { fontSize: '16px' }).setOrigin(0.5);
                 this.expBar = this.add.graphics();
                 this.expText = this.add.text(152, 42, '', { fontSize: '12px' }).setOrigin(0.5);
-                this.levelText = this.add.text(330, 5, '', { fontSize: '24px', color: '#ffff00' });
+                this.levelText = this.add.text(330, 5, '', { fontSize: '24px', color: '#00ff99' });
                 this.timeText = this.add.text(config.width - 20, 20, '', { fontSize: '20px' }).setOrigin(1, 0);
                 this.barrierIcon = this.add.image(330, 45, null).setVisible(false).setAlpha(0.8);
                 this.barrierIcon.graphics = this.add.graphics();
@@ -976,7 +1010,7 @@
                         const iconBg = this.add.graphics().fillStyle(0x000000, 0.6).fillRoundedRect(iconX, 0, iconSize, iconSize, 5);
                         const iconBorder = this.add.graphics().lineStyle(2, Phaser.Display.Color.HexStringToColor(upgrade.color).color).strokeRoundedRect(iconX, 0, iconSize, iconSize, 5);
                         const iconText = this.add.text(iconX + iconSize/2, iconSize/2, upgrade.name.substring(0,2).toUpperCase(), { fontSize: '14px', color: upgrade.color, fontStyle: 'bold' }).setOrigin(0.5);
-                        const levelText = this.add.text(iconX + iconSize - 2, iconSize - 2, level, { fontSize: '12px', color: '#ffff00', stroke: '#000000', strokeThickness: 3 }).setOrigin(1,1);
+                        const levelText = this.add.text(iconX + iconSize - 2, iconSize - 2, level, { fontSize: '12px', color: '#00ff99', stroke: '#000000', strokeThickness: 3 }).setOrigin(1,1);
                         this.ownedUpgradesContainer.add([iconBg, iconBorder, iconText, levelText]);
                         iconX += iconSize + iconGap;
                     }
@@ -1008,7 +1042,7 @@
         class PlayerBullet extends Phaser.Physics.Arcade.Sprite {
             fire(player, target) {
                 this.setActive(true).setVisible(true);
-                this.graphics = this.scene.add.graphics({ fillStyle: { color: 0xffff00 } });
+                this.graphics = this.scene.add.graphics({ fillStyle: { color: 0x00ff99 } });
                 this.body.reset(player.body.center.x, player.body.y + 20);
                 this.body.setAllowGravity(false);
                 this.body.setCircle(4);
@@ -1018,7 +1052,7 @@
                 if (this.x < -10 || this.x > config.width + 10 || this.y < -10 || this.y > config.height + 10) this.kill();
                 if (this.active) {
                     this.graphics.clear().fillStyle(0xffffff).fillCircle(this.x, this.y, 4);
-                    this.graphics.lineStyle(2, 0xffff00, 0.5).lineBetween(this.x, this.y, this.x - this.body.velocity.x * 0.05, this.y - this.body.velocity.y * 0.05);
+                    this.graphics.lineStyle(2, 0x00ff99, 0.5).lineBetween(this.x, this.y, this.x - this.body.velocity.x * 0.05, this.y - this.body.velocity.y * 0.05);
                 }
             }
             kill() { 
@@ -1063,7 +1097,7 @@
             }
             takeDamage(damage, isCrit) {
                 this.hp -= damage;
-                let text = this.scene.add.text(this.x, this.y, Math.round(damage), { fontSize: isCrit ? '20px' : '14px', color: isCrit ? '#ffff00' : '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
+                let text = this.scene.add.text(this.x, this.y, Math.round(damage), { fontSize: isCrit ? '20px' : '14px', color: isCrit ? '#00ff99' : '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
                 this.scene.tweens.add({ targets: text, y: this.y - 40, alpha: 0, duration: 700, onComplete: () => text.destroy() });
                 if (this.hp <= 0) {
                     this.scene.gainExp(this.expValue);
