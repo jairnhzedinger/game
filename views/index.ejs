@@ -226,6 +226,7 @@
             }
         }
         let playerStats;
+        let gameMode = 'single'; // single, coop or versus
 
         // --- PROCEDURAL SOUND MANAGER ---
         class SoundManager {
@@ -444,18 +445,29 @@
                     fontSize: '64px', color: '#ffffff', fontFamily: 'Consolas, Courier New, monospace', stroke: '#cccccc', strokeThickness: 2
                 }).setOrigin(0.5);
 
-                // Start Button
-                const startButton = this.add.text(width / 2, height / 2, 'INICIAR', {
-                    fontSize: '40px', color: '#00ff99', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: '#333333', padding: { x: 20, y: 10 }
-                }).setOrigin(0.5).setInteractive({ cursor: 'pointer' });
-
-                startButton.on('pointerover', () => startButton.setBackgroundColor('#555555'));
-                startButton.on('pointerout', () => startButton.setBackgroundColor('#333333'));
-                startButton.on('pointerdown', () => {
-                    soundManager.init(); // Initialize audio context on user click
-                    soundManager.playUIClickSound();
-                    this.cameras.main.fadeOut(500, 0, 0, 0);
-                    this.time.delayedCall(500, () => this.scene.start('GameScene'));
+                // Menu Buttons
+                const modes = [
+                    { label: 'SINGLE PLAYER', mode: 'single', y: height / 2 - 40 },
+                    { label: 'CO-OP', mode: 'coop', y: height / 2 },
+                    { label: '1x1', mode: 'versus', y: height / 2 + 40 },
+                ];
+                modes.forEach(m => {
+                    const btn = this.add.text(width / 2, m.y, m.label, {
+                        fontSize: '40px',
+                        color: '#00ff99',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                        backgroundColor: '#333333',
+                        padding: { x: 20, y: 10 }
+                    }).setOrigin(0.5).setInteractive({ cursor: 'pointer' });
+                    btn.on('pointerover', () => btn.setBackgroundColor('#555555'));
+                    btn.on('pointerout', () => btn.setBackgroundColor('#333333'));
+                    btn.on('pointerdown', () => {
+                        gameMode = m.mode;
+                        soundManager.init();
+                        soundManager.playUIClickSound();
+                        this.cameras.main.fadeOut(500, 0, 0, 0);
+                        this.time.delayedCall(500, () => this.scene.start('GameScene'));
+                    });
                 });
 
                 // --- Evident Credits ---
@@ -507,7 +519,10 @@
                 playerStats = new PlayerStats();
                 this.gameTime = 0;
                 this.nextEnemySpawn = 0;
+                this.p1Kills = 0;
+                this.p2Kills = 0;
                 this.lastFired = 0;
+                this.lastFired2 = 0;
                 this.isMouseDown = false;
                 
                 this.soundManager = soundManager; // Make soundManager accessible to the scene and its children
@@ -521,22 +536,51 @@
                 this.player.graphics = this.add.graphics().setDepth(1);
                 this.player.scarf = [{x: this.player.x, y: this.player.y + 20}, {x: this.player.x, y: this.player.y + 20}, {x: this.player.x, y: this.player.y + 20}, {x: this.player.x, y: this.player.y + 20}];
 
+                if (gameMode !== 'single') {
+                    this.player2 = this.physics.add.sprite(config.width / 2 + 50, config.height - 150, null);
+                    this.player2.setBodySize(24, 48).setCollideWorldBounds(true).setBounce(0.1);
+                    this.player2.body.setDragX(1200);
+                    this.player2.graphics = this.add.graphics().setDepth(1);
+                    this.player2.scarf = [
+                        { x: this.player2.x, y: this.player2.y + 20 },
+                        { x: this.player2.x, y: this.player2.y + 20 },
+                        { x: this.player2.x, y: this.player2.y + 20 },
+                        { x: this.player2.x, y: this.player2.y + 20 }
+                    ];
+                }
+
                 this.playerBullets = this.physics.add.group({ classType: PlayerBullet, runChildUpdate: true, maxSize: 50 });
+                if (gameMode !== 'single') {
+                    this.player2Bullets = this.physics.add.group({ classType: PlayerBullet, runChildUpdate: true, maxSize: 50 });
+                }
                 this.enemyBullets = this.physics.add.group({ classType: EnemyBullet, runChildUpdate: true, maxSize: 100 });
                 this.enemies = this.physics.add.group({ classType: Enemy, runChildUpdate: true });
                 this.orbs = this.physics.add.group({ classType: HealingOrb, runChildUpdate: true, maxSize: 5 }); 
                 this.particles = this.physics.add.group({ classType: Particle, runChildUpdate: true, maxSize: 200 });
                 
                 this.keys = this.input.keyboard.addKeys('W,A,D,SPACE');
+                if (gameMode !== 'single') {
+                    this.keys2 = this.input.keyboard.addKeys({ left: 'LEFT', right: 'RIGHT', up: 'UP', fire: 'SHIFT' });
+                }
                 this.mouse = this.input.activePointer;
                 this.input.on('pointerdown', () => this.isMouseDown = true);
                 this.input.on('pointerup', () => this.isMouseDown = false);
                 this.physics.add.collider(this.player, this.platforms);
+                if (this.player2) this.physics.add.collider(this.player2, this.platforms);
                 this.physics.add.overlap(this.playerBullets, this.enemies, this.hitEnemy, null, this);
+                if (this.player2Bullets) this.physics.add.overlap(this.player2Bullets, this.enemies, this.hitEnemy, null, this);
                 this.physics.add.overlap(this.player, this.enemyBullets, this.hitPlayer, null, this);
+                if (this.player2) this.physics.add.overlap(this.player2, this.enemyBullets, this.hitPlayer, null, this);
                 this.physics.add.overlap(this.player, this.enemies, this.touchEnemy, null, this);
+                if (this.player2) this.physics.add.overlap(this.player2, this.enemies, this.touchEnemy, null, this);
                 this.physics.add.overlap(this.player, this.orbs, this.collectOrb, null, this);
+                if (this.player2) this.physics.add.overlap(this.player2, this.orbs, this.collectOrb, null, this);
                 this.physics.add.collider([this.playerBullets, this.enemyBullets, this.orbs], this.platforms, (obj) => obj.kill ? obj.kill() : obj.destroy());
+                if (this.player2Bullets) this.physics.add.collider(this.player2Bullets, this.platforms, (obj) => obj.kill ? obj.kill() : obj.destroy());
+                if (gameMode === 'versus' && this.player2) {
+                    this.physics.add.overlap(this.playerBullets, this.player2, this.hitPlayer2Pvp, null, this);
+                    this.physics.add.overlap(this.player2Bullets, this.player, this.hitPlayer1Pvp, null, this);
+                }
                 
                 this.createUI();
                 this.time.addEvent({ delay: 1000, callback: () => this.gameTime++, loop: true });
@@ -551,10 +595,13 @@
 
                 this.updateBackground();
                 this.handlePlayerMovement();
+                if (this.player2) this.handlePlayer2Movement();
                 this.handlePlayerShooting(time);
+                if (this.player2) this.handlePlayer2Shooting(time);
                 this.handleEnemySpawning(time);
                 this.updateBarrier(time);
                 this.drawPlayer(time);
+                if (this.player2) this.drawPlayer2(time);
                 this.updateUI(time);
             }
 
@@ -631,10 +678,30 @@
             handlePlayerShooting(time) {
                 if (this.isMouseDown && time > this.lastFired + playerStats.fireRate) {
                     const bullet = this.playerBullets.get();
-                    if (bullet) { 
-                        bullet.fire(this.player, this.mouse); 
-                        this.lastFired = time; 
+                    if (bullet) {
+                        bullet.fire(this.player, this.mouse);
+                        this.lastFired = time;
                         this.soundManager.playShootSound(); // Play sound
+                    }
+                }
+            }
+
+            handlePlayer2Movement() {
+                if (this.player2.body.touching.down) { this.player2.jumps = 1; }
+                if (this.keys2.left.isDown) { this.player2.setVelocityX(-playerStats.speed); this.player2.flipX = true; }
+                else if (this.keys2.right.isDown) { this.player2.setVelocityX(playerStats.speed); this.player2.flipX = false; }
+                if (Phaser.Input.Keyboard.JustDown(this.keys2.up)) {
+                    if (this.player2.jumps > 0) { this.player2.setVelocityY(-playerStats.jumpPower); this.player2.jumps--; }
+                }
+            }
+
+            handlePlayer2Shooting(time) {
+                if (this.keys2.fire.isDown && time > this.lastFired2 + playerStats.fireRate) {
+                    const bullet = this.player2Bullets.get();
+                    if (bullet) {
+                        bullet.fire(this.player2, this.mouse);
+                        this.lastFired2 = time;
+                        this.soundManager.playShootSound();
                     }
                 }
             }
@@ -688,6 +755,18 @@
             }
 
             hitPlayer(playerObj, bullet) { this.takePlayerDamage(bullet.damage); bullet.kill(); }
+            hitPlayer2Pvp(playerObj, bullet) {
+                bullet.kill();
+                this.p1Kills++;
+                playerObj.setPosition(config.width / 2 + 50, config.height - 150);
+                if (this.p1Kills >= 20) this.gameOver();
+            }
+            hitPlayer1Pvp(playerObj, bullet) {
+                bullet.kill();
+                this.p2Kills++;
+                playerObj.setPosition(config.width / 2, config.height - 150);
+                if (this.p2Kills >= 20) this.gameOver();
+            }
             touchEnemy(playerObj, enemy) {
                 this.takePlayerDamage(enemy.touchDamage);
                 if (playerStats.bodyDamage > 0) enemy.takeDamage(playerStats.bodyDamage, false);
@@ -976,6 +1055,23 @@
                 });
             }
 
+            drawPlayer2(time) {
+                const g = this.player2.graphics;
+                g.clear().lineStyle(2, 0xffffff, 1.0).setDepth(1);
+                const x = this.player2.body.center.x; const y = this.player2.body.y;
+                g.beginPath().moveTo(x - 12, y + 48).lineTo(x, y + 10).lineTo(x + 12, y + 48).closePath().strokePath();
+                g.strokeCircle(x, y + 6, 6);
+                const staffX = this.player2.flipX ? x - 10 : x + 10;
+                g.lineBetween(staffX, y, staffX, y + 48);
+                g.strokeCircle(staffX, y, 3);
+                let lead = { x: x + (this.player2.flipX ? 5 : -5) , y: y + 20 };
+                this.player2.scarf.forEach((p, i) => {
+                    p.x += (lead.x - p.x) * 0.5; p.y += (lead.y - p.y) * 0.5;
+                    g.lineStyle(2 - i * 0.4, 0xff0000).lineBetween(lead.x, lead.y, p.x, p.y);
+                    lead = p;
+                });
+            }
+
             createUI() {
                 const uiContainer = this.add.container(20, 20).setDepth(50);
                 uiContainer.add(this.add.graphics().fillStyle(0x000000, 0.5).fillRect(0, 0, 304, 52));
@@ -989,6 +1085,9 @@
                 this.barrierIcon.graphics = this.add.graphics();
                 this.ownedUpgradesContainer = this.add.container(20, 80).setDepth(50);
                 uiContainer.add([this.hpBar, this.expBar, this.hpText, this.expText, this.levelText, this.timeText, this.barrierIcon, this.barrierIcon.graphics, this.ownedUpgradesContainer]);
+                if (gameMode === 'versus') {
+                    this.killText = this.add.text(config.width / 2, 20, '0 - 0', { fontSize: '24px', color: '#ff9999' }).setOrigin(0.5).setDepth(50);
+                }
             }
 
             updateUI(time) {
@@ -998,6 +1097,7 @@
                 this.expText.setText(`EXP: ${playerStats.exp} / ${playerStats.expToNext}`);
                 this.levelText.setText(`LV.${playerStats.level}`);
                 this.timeText.setText(`${Math.floor(this.gameTime/60)}:${(this.gameTime%60).toString().padStart(2, '0')}`);
+                if (this.killText) this.killText.setText(`${this.p1Kills} - ${this.p2Kills}`);
             }
 
             updateOwnedUpgradesUI() {
