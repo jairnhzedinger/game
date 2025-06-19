@@ -174,8 +174,18 @@
     </style>
 </head>
 <body>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <script>
+        let currentOnline = <%= typeof onlineCount !== 'undefined' ? onlineCount : 0 %>;
+        const socket = io();
+        socket.on('onlineCount', count => {
+            currentOnline = count;
+            if (typeof window.updateOnlineCount === 'function') {
+                window.updateOnlineCount(count);
+            }
+        });
+
         // --- API CONFIGURATION ---
         const BASE_API_URL = 'https://howdyhey.squareweb.app';
         const API_ENDPOINTS = {

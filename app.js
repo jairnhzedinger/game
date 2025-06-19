@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Rota principal
 app.get('/', (req, res) => {
-  res.render('index');
+  res.render('index', { onlineCount });
 });
 
 // --- SIMPLE MATCHMAKING AND ONLINE COUNTER ---
