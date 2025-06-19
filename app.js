@@ -36,10 +36,12 @@ io.on('connection', socket => {
     if (queues[mode].length >= 2) {
       const [p1, p2] = queues[mode].splice(0, 2);
       const room = `room-${mode}-${Date.now()}-${Math.floor(Math.random()*10000)}`;
-      p1.join(room);
-      p2.join(room);
-      p1.emit('matchFound', { room, player: 1, mode });
-      p2.emit('matchFound', { room, player: 2, mode });
+      const seed = Date.now();
+      p1.join(room); p2.join(room);
+      p1.room = room; p2.room = room;
+      p1.playerNumber = 1; p2.playerNumber = 2;
+      p1.emit('matchFound', { room, player: 1, mode, seed });
+      p2.emit('matchFound', { room, player: 2, mode, seed });
     }
   });
 
@@ -50,6 +52,24 @@ io.on('connection', socket => {
       if (idx !== -1) queues[mode].splice(idx, 1);
     }
     socket.matchMode = null;
+  });
+
+  socket.on('playerState', data => {
+    if (socket.room) {
+      socket.to(socket.room).emit('playerState', data);
+    }
+  });
+
+  socket.on('playerShoot', data => {
+    if (socket.room) {
+      socket.to(socket.room).emit('playerShoot', data);
+    }
+  });
+
+  socket.on('pauseGame', data => {
+    if (socket.room) {
+      io.to(socket.room).emit('pauseGame', data);
+    }
   });
 
   socket.on('disconnect', () => {

@@ -186,6 +186,30 @@
             }
         });
 
+        // --- MULTIPLAYER STATE ---
+        let playerNumber = 1;
+        let matchRoom = null;
+        let gameSeed = Date.now();
+        let currentScene = null;
+
+        socket.on('playerState', data => {
+            if (currentScene && currentScene.handleRemoteState) {
+                currentScene.handleRemoteState(data);
+            }
+        });
+
+        socket.on('playerShoot', data => {
+            if (currentScene && currentScene.handleRemoteShoot) {
+                currentScene.handleRemoteShoot(data);
+            }
+        });
+
+        socket.on('pauseGame', data => {
+            if (currentScene && currentScene.handleRemotePause) {
+                currentScene.handleRemotePause(data);
+            }
+        });
+
         // --- API CONFIGURATION ---
         const BASE_API_URL = 'https://howdyhey.squareweb.app';
         const API_ENDPOINTS = {
@@ -554,6 +578,9 @@
                     socket.off('matchFound', onMatch);
                     txt.destroy(); cancel.destroy();
                     gameMode = data.mode;
+                    playerNumber = data.player;
+                    matchRoom = data.room;
+                    gameSeed = data.seed;
                     this.cameras.main.fadeOut(500,0,0,0);
                     this.time.delayedCall(500, () => this.scene.start('GameScene'));
                 };
@@ -575,6 +602,8 @@
                 this.gameIsOver = false;
                 this.gameIsPaused = false;
                 playerStats = new PlayerStats();
+                Phaser.Math.RND.sow([gameSeed]);
+                currentScene = this;
                 this.gameTime = 0;
                 this.nextEnemySpawn = 0;
                 this.p1Kills = 0;
@@ -620,6 +649,7 @@
                 if (gameMode !== 'single') {
                     this.keys2 = this.input.keyboard.addKeys({ left: 'LEFT', right: 'RIGHT', up: 'UP', fire: 'SHIFT' });
                 }
+                this.pauseKey = this.input.keyboard.addKey('P');
                 this.mouse = this.input.activePointer;
                 this.input.on('pointerdown', () => this.isMouseDown = true);
                 this.input.on('pointerup', () => this.isMouseDown = false);
@@ -646,21 +676,33 @@
 
                 // Ensure any leftover overlay is removed from previous game if it wasn't cleaned
                 this.removeRankingOverlay();
+                currentScene = this;
             }
             
             update(time, delta) {
+                if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+                    this.gameIsPaused = !this.gameIsPaused;
+                    if (this.gameIsPaused) this.physics.pause(); else this.physics.resume();
+                    if (gameMode !== 'single') socket.emit('pauseGame', { paused: this.gameIsPaused });
+                }
+
                 if (this.gameIsOver || this.gameIsPaused) return;
 
                 this.updateBackground();
-                this.handlePlayerMovement();
-                if (this.player2) this.handlePlayer2Movement();
-                this.handlePlayerShooting(time);
-                if (this.player2) this.handlePlayer2Shooting(time);
+                if (playerNumber === 1 || gameMode === 'single') this.handlePlayerMovement();
+                if (this.player2 && playerNumber === 2) this.handlePlayer2Movement();
+                if (playerNumber === 1 || gameMode === 'single') this.handlePlayerShooting(time);
+                if (this.player2 && playerNumber === 2) this.handlePlayer2Shooting(time);
                 this.handleEnemySpawning(time);
                 this.updateBarrier(time);
                 this.drawPlayer(time);
                 if (this.player2) this.drawPlayer2(time);
                 this.updateUI(time);
+
+                if (gameMode !== 'single') {
+                    const me = playerNumber === 1 ? this.player : this.player2;
+                    socket.emit('playerState', { x: me.x, y: me.y, flipX: me.flipX });
+                }
             }
 
             // --- VISUAL & WORLD CREATION ---
@@ -710,7 +752,10 @@
                     const plat = this.platforms.create(p.x, p.y).setBodySize(p.w, p.h).setDisplaySize(p.w,p.h).setVisible(false);
                     platGraphics.fillRect(plat.x-plat.displayWidth/2, plat.y-plat.displayHeight/2, plat.displayWidth, plat.displayHeight);
                     for(let i = 0; i < p.w/10; i++) {
-                        platGraphics.fillStyle(0x334455, Math.random()*0.5).fillCircle(p.x - p.w/2 + Math.random()*p.w, p.y-p.h/2+Math.random()*p.h, Math.random()*3+1);
+                        platGraphics.fillStyle(0x334455, Phaser.Math.RND.frac()*0.5)
+                            .fillCircle(p.x - p.w/2 + Phaser.Math.RND.frac()*p.w,
+                                        p.y-p.h/2+Phaser.Math.RND.frac()*p.h,
+                                        Phaser.Math.RND.frac()*3+1);
                     }
                     plat.refreshBody();
                 });
@@ -725,8 +770,9 @@
 
             // --- CORE LOGIC FUNCTIONS ---
             handlePlayerMovement() {
+                if (gameMode !== 'single' && playerNumber !== 1) return;
                 if (this.player.body.touching.down) { playerStats.jumps = playerStats.maxJumps; }
-                if (this.keys.A.isDown) { this.player.setVelocityX(-playerStats.speed); this.player.flipX = true; } 
+                if (this.keys.A.isDown) { this.player.setVelocityX(-playerStats.speed); this.player.flipX = true; }
                 else if (this.keys.D.isDown) { this.player.setVelocityX(playerStats.speed); this.player.flipX = false; }
                 if (Phaser.Input.Keyboard.JustDown(this.keys.W) || Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
                     if (playerStats.jumps > 0) { this.player.setVelocityY(-playerStats.jumpPower); playerStats.jumps--; }
@@ -734,10 +780,12 @@
             }
 
             handlePlayerShooting(time) {
+                if (gameMode !== 'single' && playerNumber !== 1) return;
                 if (this.isMouseDown && time > this.lastFired + playerStats.fireRate) {
                     const bullet = this.playerBullets.get();
                     if (bullet) {
                         bullet.fire(this.player, this.mouse);
+                        if (gameMode !== 'single') socket.emit('playerShoot', { tx: this.mouse.x, ty: this.mouse.y });
                         this.lastFired = time;
                         this.soundManager.playShootSound(); // Play sound
                     }
@@ -745,6 +793,7 @@
             }
 
             handlePlayer2Movement() {
+                if (gameMode !== 'single' && playerNumber !== 2) return;
                 if (this.player2.body.touching.down) { this.player2.jumps = 1; }
                 if (this.keys2.left.isDown) { this.player2.setVelocityX(-playerStats.speed); this.player2.flipX = true; }
                 else if (this.keys2.right.isDown) { this.player2.setVelocityX(playerStats.speed); this.player2.flipX = false; }
@@ -754,10 +803,12 @@
             }
 
             handlePlayer2Shooting(time) {
+                if (gameMode !== 'single' && playerNumber !== 2) return;
                 if (this.keys2.fire.isDown && time > this.lastFired2 + playerStats.fireRate) {
                     const bullet = this.player2Bullets.get();
                     if (bullet) {
                         bullet.fire(this.player2, this.mouse);
+                        if (gameMode !== 'single') socket.emit('playerShoot', { tx: this.mouse.x, ty: this.mouse.y });
                         this.lastFired2 = time;
                         this.soundManager.playShootSound();
                     }
@@ -779,13 +830,13 @@
                 const spawnPadding = 50; // Distance off-screen
                 const topSpawnChance = 0.3; // 30% chance to spawn from top
 
-                if (Math.random() < topSpawnChance) {
+                if (Phaser.Math.RND.frac() < topSpawnChance) {
                     // Spawn from top
                     x = Phaser.Math.Between(spawnPadding, config.width - spawnPadding); // Anywhere across the top
                     y = -spawnPadding; // Just above the top of the screen
                 } else {
                     // Spawn from left or right
-                    x = Math.random() < 0.5 ? -spawnPadding : config.width + spawnPadding;
+                    x = Phaser.Math.RND.frac() < 0.5 ? -spawnPadding : config.width + spawnPadding;
                     // Y can be anywhere within the top half of the screen for horizontal spawns
                     y = Phaser.Math.Between(50, config.height * 0.5); 
                 }
@@ -796,7 +847,7 @@
 
             hitEnemy(bullet, enemy) {
                 let dmg = playerStats.projectileDamage;
-                let isCrit = Math.random() < playerStats.critChance;
+                let isCrit = Phaser.Math.RND.frac() < playerStats.critChance;
                 if (isCrit) dmg *= playerStats.critMultiplier;
                 enemy.takeDamage(dmg, isCrit);
                 this.soundManager.playEnemyHitSound(); // Play sound
@@ -1195,6 +1246,31 @@
                 playerStats.hasBarrier = true;
                 this.barrierIcon.setVisible(true).setScale(1).setAlpha(0.8);
             }
+
+            // --- NETWORK HANDLERS ---
+            handleRemoteState(data) {
+                const target = playerNumber === 1 ? this.player2 : this.player;
+                if (target) {
+                    target.setPosition(data.x, data.y);
+                    target.flipX = data.flipX;
+                }
+            }
+
+            handleRemoteShoot(data) {
+                const group = playerNumber === 1 ? this.player2Bullets : this.playerBullets;
+                const shooter = playerNumber === 1 ? this.player2 : this.player;
+                if (group && shooter) {
+                    const bullet = group.get();
+                    if (bullet) {
+                        bullet.fire(shooter, { x: data.tx, y: data.ty });
+                    }
+                }
+            }
+
+            handleRemotePause(data) {
+                this.gameIsPaused = data.paused;
+                if (this.gameIsPaused) this.physics.pause(); else this.physics.resume();
+            }
         }
 
         // --- GAME OBJECT CLASSES ---
@@ -1260,7 +1336,7 @@
                 this.scene.tweens.add({ targets: text, y: this.y - 40, alpha: 0, duration: 700, onComplete: () => text.destroy() });
                 if (this.hp <= 0) {
                     this.scene.gainExp(this.expValue);
-                    if (Math.random() < playerStats.healOrbChance) this.scene.orbs.get(this.x, this.y)?.launch();
+                    if (Phaser.Math.RND.frac() < playerStats.healOrbChance) this.scene.orbs.get(this.x, this.y)?.launch();
                     this.kill();
                 }
             }
