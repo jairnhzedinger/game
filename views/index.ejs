@@ -186,29 +186,29 @@
         // --- UPGRADE DEFINITIONS (RARITY AFFECTS APPEARANCE CHANCE) ---
         const UPGRADES = [
             // Common (White)
-            { id: 'catalyst', name: 'Catalyst', desc: 'Projectile Damage +2', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.projectileDamage += 2; } },
-            { id: 'eyesight', name: 'Eyesight', desc: 'Critical Chance +5%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.critChance += 0.05; } },
-            { id: 'growth', name: 'Growth', desc: 'Max. HP +10', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.maxHp += 10; stats.currentHp += 10; } },
-            { id: 'impulse', name: 'Impulse', desc: 'Jump Height +15%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.jumpPower *= 1.15; } },
-            { id: 'renew', name: 'Renew', desc: 'Heal to Max. HP', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.currentHp = stats.maxHp; } },
-            { id: 'resist', name: 'Resist', desc: 'Defense +4%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.defense += 0.04; } },
-            { id: 'resonance', name: 'Resonance', desc: 'Atk Speed +12%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.fireRate *= 0.88; } },
-            { id: 'swift', name: 'Swift', desc: 'Movement Speed +20%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.speed *= 1.20; } },
+            { id: 'catalyst', name: 'Catalyst', desc: 'Dano dos projéteis +2', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.projectileDamage += 2; } },
+            { id: 'eyesight', name: 'Eyesight', desc: 'Chance de crítico +5%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.critChance += 0.05; } },
+            { id: 'growth', name: 'Growth', desc: 'HP Máx. +10', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.maxHp += 10; stats.currentHp += 10; } },
+            { id: 'impulse', name: 'Impulse', desc: 'Altura do pulo +15%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.jumpPower *= 1.15; } },
+            { id: 'renew', name: 'Renew', desc: 'Recupera todo o HP', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.currentHp = stats.maxHp; } },
+            { id: 'resist', name: 'Resist', desc: 'Defesa +4%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.defense += 0.04; } },
+            { id: 'resonance', name: 'Resonance', desc: 'Velocidade de ataque +12%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.fireRate *= 0.88; } },
+            { id: 'swift', name: 'Swift', desc: 'Velocidade de movimento +20%', rarity: 'common', color: '#ffffff', apply: (stats) => { stats.speed *= 1.20; } },
             // Uncommon (Green)
-            { id: 'growth_plus', name: 'Growth+', desc: 'Max. HP +20', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.maxHp += 20; stats.currentHp += 20; } },
-            { id: 'gush', name: 'Gush', desc: 'Adds +1 Jump', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.maxJumps += 1; } },
-            { id: 'leech', name: 'Leech', desc: 'Life Steal 3% of Damage', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.lifesteal += 0.03; } },
-            { id: 'orb', name: 'Orb', desc: 'Enemies have 5% chance to drop a healing orb', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.healOrbChance += 0.05; } },
-            { id: 'precision', name: 'Precision', desc: 'Critical hits deal +50% damage', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.critMultiplier += 0.5; } },
-            { id: 'resonance_plus', name: 'Resonance+', desc: 'Attack Speed +24%', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.fireRate *= 0.76; } },
-            { id: 'swift_plus', name: 'Swift+', desc: 'Movement Speed +40%', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.speed *= 1.40; } },
+            { id: 'growth_plus', name: 'Growth+', desc: 'HP Máx. +20', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.maxHp += 20; stats.currentHp += 20; } },
+            { id: 'gush', name: 'Gush', desc: 'Adiciona +1 pulo', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.maxJumps += 1; } },
+            { id: 'leech', name: 'Leech', desc: 'Roubo de vida 3% do dano', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.lifesteal += 0.03; } },
+            { id: 'orb', name: 'Orb', desc: 'Inimigos têm 5% de chance de dropar orbe de cura', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.healOrbChance += 0.05; } },
+            { id: 'precision', name: 'Precision', desc: 'Críticos causam +50% de dano', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.critMultiplier += 0.5; } },
+            { id: 'resonance_plus', name: 'Resonance+', desc: 'Velocidade de ataque +24%', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.fireRate *= 0.76; } },
+            { id: 'swift_plus', name: 'Swift+', desc: 'Velocidade de movimento +40%', rarity: 'uncommon', color: '#33ff77', apply: (stats) => { stats.speed *= 1.40; } },
             // Rare (Blue)
-            { id: 'appraisal', name: 'Appraisal', desc: '+1 upgrade choice on level up', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.upgradeChoices += 1; } },
-            { id: 'barrier', name: 'Barrier', desc: 'Blocks one hit every 15s', rarity: 'rare', color: '#33ccff', apply: (stats, scene) => { scene.enableBarrier(); } },
-            { id: 'growth_plusplus', name: 'Growth++', desc: 'Max. HP +40', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.maxHp += 40; stats.currentHp += 40; } },
-            { id: 'leech_plus', name: 'Leech+', desc: 'Life Steal 9% of Damage', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.lifesteal += 0.09; } },
-            { id: 'overheat', name: 'Overheat', desc: 'Your body deals 40 damage on contact', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.bodyDamage += 40; } },
-            { id: 'wound', name: 'Wound', desc: 'Attacks apply Bleed for 3s', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.canApplyWound = true; } },
+            { id: 'appraisal', name: 'Appraisal', desc: '+1 escolha de upgrade ao subir de nível', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.upgradeChoices += 1; } },
+            { id: 'barrier', name: 'Barrier', desc: 'Bloqueia um golpe a cada 15s', rarity: 'rare', color: '#33ccff', apply: (stats, scene) => { scene.enableBarrier(); } },
+            { id: 'growth_plusplus', name: 'Growth++', desc: 'HP Máx. +40', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.maxHp += 40; stats.currentHp += 40; } },
+            { id: 'leech_plus', name: 'Leech+', desc: 'Roubo de vida 9% do dano', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.lifesteal += 0.09; } },
+            { id: 'overheat', name: 'Overheat', desc: 'Seu corpo causa 40 de dano ao tocar', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.bodyDamage += 40; } },
+            { id: 'wound', name: 'Wound', desc: 'Ataques aplicam sangramento por 3s', rarity: 'rare', color: '#33ccff', apply: (stats) => { stats.canApplyWound = true; } },
         ];
         
         // --- PLAYER STATS (Defined globally so game objects can easily access it) ---
@@ -918,7 +918,7 @@
                 const overlay = this.add.graphics().fillStyle(0x000000, 0.8).fillRect(0, 0, config.width, config.height).setDepth(99);
                 container.add(overlay); container.x = 0; container.y = 0;
 
-                const title = this.add.text(config.width/2, config.height/2 - dialogHeight/2 + 50, 'LEVEL UP! CHOOSE AN UPGRADE', { fontSize: '28px', color: '#00ff99', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
+                const title = this.add.text(config.width/2, config.height/2 - dialogHeight/2 + 50, 'SUBIU DE NÍVEL! ESCOLHA UMA CARTA', { fontSize: '28px', color: '#00ff99', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
                 container.add(title);
                 
                 choices.forEach((upgrade, i) => {
@@ -931,6 +931,7 @@
                     const currentLevel = playerStats.ownedUpgrades[upgrade.id] || 0;
                     const drawButton = (isHover) => {
                         bg.clear();
+                        bg.fillStyle(0x000000, 0.5).fillRoundedRect(-355, -cardHeight/2 + 5, 710, cardHeight, 12);
                         bg.fillStyle(isHover ? 0x282828 : 0x111111, 0.95).fillRoundedRect(-350, -cardHeight/2, 700, cardHeight, 10);
                         bg.lineStyle(3, Phaser.Display.Color.HexStringToColor(upgrade.color).color, isHover ? 1.0 : 0.6).strokeRoundedRect(-350, -cardHeight/2, 700, cardHeight, 10);
                     };
