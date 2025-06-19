@@ -52,6 +52,9 @@
     border:2px solid #fff;
     text-align:center;
     box-shadow:0 0 15px rgba(0,0,0,0.8);
+    border-radius:12px;
+    width:60%;
+    max-width:400px;
   }
   #upgradeContainer { display:none; width:80%; }
   #upgradeContainer .upgrade-cards {
@@ -72,6 +75,11 @@
   .upgrade-card:hover { background:#555; }
   .upgrade-card h4 { margin:0 0 8px; font-size:18px; }
   .upgrade-card p { margin:0; font-size:14px; }
+  #menu h1 {
+    margin:0 0 10px;
+    font-size:36px;
+    letter-spacing:1px;
+  }
   #menu button {
     display:block;
     margin:10px auto 0;
@@ -84,6 +92,11 @@
     border-radius:6px;
   }
   #menu button:hover { background:#666; }
+  #menu #credits {
+    margin-top:15px;
+    font-size:14px;
+    color:#ccc;
+  }
 </style>
 </head>
 <body>
@@ -98,7 +111,12 @@
   <div>Score:<span id="score"></span></div>
 </div>
 <div id="upgradeContainer"></div>
-<div id="menu"><h1>Sidescroller</h1><button id="startBtn">Start Game</button></div>
+<div id="menu">
+  <h1>Sidescroller</h1>
+  <button id="startBtn">Start Game</button>
+  <button id="fullBtn">Fullscreen</button>
+  <p id="credits">Credits: JAIR EDINGER</p>
+</div>
 </div>
 <script>
 const canvas=document.getElementById('game');
@@ -269,6 +287,16 @@ document.getElementById('startBtn').onclick=()=>{
   last=performance.now();
   requestAnimationFrame(loop);
 };
+document.getElementById('fullBtn').onclick=toggleFullScreen;
+function toggleFullScreen(){
+  if(!document.fullscreenElement){
+    if(document.documentElement.requestFullscreen){
+      document.documentElement.requestFullscreen();
+    }
+  }else{
+    document.exitFullscreen();
+  }
+}
 function showUpgrades(){
   gamePaused=true;mouse.down=false;
   const cont=document.getElementById('upgradeContainer');
