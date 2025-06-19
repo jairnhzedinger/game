@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple Sidescroller Game</title>
+<style>
+  body { margin:0; overflow:hidden; background:#222; }
+  #ui { position:absolute; top:10px; left:10px; color:white; font-family:sans-serif; }
+  #upgradeContainer { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#333; color:#fff; padding:20px; display:none; }
+  #upgradeContainer button { display:block; margin:5px 0; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div>HP:<span id="hp"></span></div>
+  <div style="background:#555; width:200px; height:10px;">
+    <div id="hpBar" style="background:#f44; height:100%; width:100%;"></div>
+  </div>
+  <div>EXP:<span id="exp"></span></div>
+  <div style="background:#555; width:200px; height:10px;">
+    <div id="expBar" style="background:#4f4; height:100%; width:0;"></div>
+  </div>
+</div>
+<div id="upgradeContainer"></div>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+canvas.width=800;canvas.height=600;
+const keys={};
+let mouse={x:0,y:0,down:false};
+document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
+document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
+canvas.addEventListener('mousedown',()=>mouse.down=true);
+canvas.addEventListener('mouseup',()=>mouse.down=false);
+class Entity{constructor(x,y,w,h){this.x=x;this.y=y;this.vx=0;this.vy=0;this.w=w;this.h=h;}}
+class Player extends Entity{constructor(){super(100,500,30,40);this.speed=3;this.jump=12;this.maxHp=100;this.hp=100;this.exp=0;this.level=1;this.expToLevel=100;this.inv=0;this.shootCd=0;this.shootDelay=400;this.projDmg=10;this.projSize=5;this.attackChoices=3;}}
+class Enemy extends Entity{constructor(str){const x=Math.random()*canvas.width;super(x,-20,30,30);this.follow=false;this.hp=20+str*5;this.shootDelay=1000;this.shootCd=this.shootDelay;}}
+class Bullet extends Entity{constructor(x,y,vx,vy,size,damage,owner){super(x,y,size,size);this.vx=vx;this.vy=vy;this.damage=damage;this.owner=owner;}}
+class Upgrade{constructor(name,desc,apply){this.name=name;this.desc=desc;this.apply=apply;}}
+const upgrades=[
+  new Upgrade('Catalyst','Projectile Damage +2',p=>p.projDmg+=2),
+  new Upgrade('Eyesight','Critical Chance +5%',p=>p.crit=(p.crit||0)+0.05),
+  new Upgrade('Growth','Max HP +10',p=>{p.maxHp+=10;p.hp+=10;}),
+  new Upgrade('Impulse','Jump Height +30%',p=>p.jump*=1.3),
+  new Upgrade('Renew','Heal to Max HP',p=>p.hp=p.maxHp),
+  new Upgrade('Resonance','Attack Speed +12%',p=>p.shootDelay*=0.88),
+  new Upgrade('Swift','Move Speed +20%',p=>p.speed*=1.2),
+  new Upgrade('Charge','Projectile Size +20%',p=>p.projSize*=1.2),
+  new Upgrade('Catalyst+','Projectile Damage +4',p=>p.projDmg+=4),
+  new Upgrade('Growth+','Max HP +20',p=>{p.maxHp+=20;p.hp+=20;}),
+  new Upgrade('Swift+','Move Speed +40%',p=>p.speed*=1.4),
+  new Upgrade('Resonance+','Attack Speed +24%',p=>p.shootDelay*=0.76),
+  new Upgrade('Shrink','10% smaller',p=>{p.w*=0.9;p.h*=0.9;}),
+  new Upgrade('Barrier','Periodic shield',p=>p.shieldCooldown=0),
+  new Upgrade('Appraisal','Next choices +1',p=>p.attackChoices+=1),
+  new Upgrade('Overheat','Body deals 40 dmg on contact',p=>p.bodyDmg=40)
+];
+const player=new Player();
+const bullets=[];const enemies=[];const enemyBullets=[];let spawnTimer=0;let score=0;
+const ground=[{x:0,y:560,w:200,h:40},{x:200,y:520,w:200,h:80},{x:400,y:480,w:200,h:120},{x:600,y:440,w:200,h:160}];
+function spawnEnemy(){const str=Math.floor(score/100);enemies.push(new Enemy(str));}
+function update(dt){player.inv=Math.max(0,player.inv-dt);player.shootCd=Math.max(0,player.shootCd-dt);
+  if(keys['a'])player.vx=-player.speed;else if(keys['d'])player.vx=player.speed;else player.vx=0;
+  if(keys[' ']&&player.onGround){player.vy=-player.jump;player.onGround=false;}
+  if(mouse.down&&player.shootCd<=0){shootBullet();player.shootCd=player.shootDelay;}
+  player.vy+=0.5;player.x+=player.vx;player.y+=player.vy;
+  collidePlayer();
+  bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});
+  enemyBullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});
+  enemies.forEach(e=>{if(!e.follow){e.y+=2;if(e.y>canvas.height*0.7)e.follow=true;}else{const dx=player.x-e.x;e.x+=dx*0.02;}e.shootCd-=dt;if(e.shootCd<=0){shootEnemy(e);e.shootCd=e.shootDelay;}});
+  handleCollisions();
+  spawnTimer-=dt;if(spawnTimer<=0){spawnEnemy();spawnTimer=2000-Math.min(score,1500);}
+}
+function collidePlayer(){player.onGround=false;ground.forEach(g=>{if(rectIntersect(player,g)){player.y=g.y-player.h;player.vy=0;player.onGround=true;}});if(player.x<0)player.x=0;if(player.x>canvas.width-player.w)player.x=canvas.width-player.w;if(player.y>canvas.height){player.y=0;}}
+function rectIntersect(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
+function handleCollisions(){
+ bullets.forEach((b,i)=>{enemies.forEach((e,j)=>{if(rectIntersect(b,e)){e.hp-=player.projDmg;bullets.splice(i,1);if(e.hp<=0)killEnemy(j);}});});
+ enemyBullets.forEach((b,i)=>{if(rectIntersect(b,player)&&player.inv<=0){player.hp-=10;player.inv=500;enemyBullets.splice(i,1);if(player.hp<=0){alert('Game Over');location.reload();}}});
+ enemies.forEach((e,j)=>{if(player.bodyDmg&&rectIntersect(e,player)){e.hp-=player.bodyDmg;if(e.hp<=0)killEnemy(j);}});
+}
+function killEnemy(i){score+=10;player.exp+=20;enemies.splice(i,1);if(player.exp>=player.expToLevel){player.exp-=player.expToLevel;player.level++;player.expToLevel=Math.floor(player.expToLevel*1.2);showUpgrades();}}
+function shootBullet(){const dx=mouse.x-(player.x+player.w/2);const dy=mouse.y-(player.y+player.h/2);const len=Math.hypot(dx,dy);const vx=dx/len*8;const vy=dy/len*8;bullets.push(new Bullet(player.x+player.w/2,player.y+player.h/2,vx,vy,player.projSize,player.projDmg,'player'));}
+function shootEnemy(e){const dx=player.x-e.x;const dy=player.y-e.y;const len=Math.hypot(dx,dy);const vx=dx/len*4;const vy=dy/len*4;enemyBullets.push(new Bullet(e.x,e.y,vx,vy,5,10,'enemy'));}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#080';ground.forEach(g=>ctx.fillRect(g.x,g.y,g.w,g.h));ctx.fillStyle='blue';ctx.fillRect(player.x,player.y,player.w,player.h);bullets.forEach(b=>{ctx.fillStyle='yellow';ctx.fillRect(b.x,b.y,b.w,b.h);});enemyBullets.forEach(b=>{ctx.fillStyle='red';ctx.fillRect(b.x,b.y,b.w,b.h);});enemies.forEach(e=>{ctx.fillStyle='orange';ctx.fillRect(e.x,e.y,e.w,e.h);});document.getElementById('hp').textContent=` ${Math.floor(player.hp)}/${player.maxHp}`;document.getElementById('hpBar').style.width=`${player.hp/player.maxHp*100}%`;document.getElementById('exp').textContent=` ${player.exp}/${player.expToLevel}`;document.getElementById('expBar').style.width=`${player.exp/player.expToLevel*100}%`;}
+let last=0;function loop(t){const dt=t-last;last=t;update(dt);draw();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+function showUpgrades(){mouse.down=false;const cont=document.getElementById('upgradeContainer');cont.innerHTML='<h3>Choose an upgrade</h3>';const opts=[];while(opts.length<player.attackChoices){const u=upgrades[Math.floor(Math.random()*upgrades.length)];if(!opts.includes(u))opts.push(u);}opts.forEach(u=>{const b=document.createElement('button');b.textContent=u.name+' - '+u.desc;b.onclick=()=>{u.apply(player);cont.style.display='none';requestAnimationFrame(loop);};cont.appendChild(b);});cont.style.display='block';}
+</script>
+</body>
+</html>
