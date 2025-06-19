@@ -5,8 +5,15 @@
 <title>Simple Sidescroller Game</title>
 <style>
   body { margin:0; overflow:hidden; background:#111; color:#fff; font-family:Arial, sans-serif; }
-  canvas { background:linear-gradient(#222, #555); display:block; margin:0 auto; border:2px solid #555; }
-  #ui { position:absolute; top:10px; left:10px; color:white; }
+  canvas { background:linear-gradient(#222,#444); display:block; margin:0 auto; border:2px solid #555; }
+  #ui {
+    position:absolute;
+    bottom:10px; left:10px;
+    background:rgba(0,0,0,0.5);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:14px;
+  }
   #upgradeContainer, #menu {
     position:absolute;
     top:50%; left:50%; transform:translate(-50%,-50%);
@@ -42,6 +49,12 @@ const ctx=canvas.getContext('2d');
 canvas.width=800;canvas.height=600;
 const keys={};
 let mouse={x:0,y:0,down:false};
+
+const playerImg=new Image();
+playerImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="18" fill="#3af"/><path d="M20 10 L27 27 L13 27 Z" fill="#fff"/></svg>`);
+const enemyImg=new Image();
+enemyImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><rect width="30" height="30" rx="6" fill="#fa0"/><circle cx="15" cy="15" r="5" fill="#000"/></svg>`);
+const particles=[];
 document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
 document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
@@ -51,6 +64,9 @@ class Entity{constructor(x,y,w,h){this.x=x;this.y=y;this.vx=0;this.vy=0;this.w=w
 class Player extends Entity{constructor(){super(100,500,30,40);this.speed=3;this.jump=12;this.maxHp=100;this.hp=100;this.exp=0;this.level=1;this.expToLevel=100;this.inv=0;this.shootCd=0;this.shootDelay=400;this.projDmg=10;this.projSize=5;this.attackChoices=3;}}
 class Enemy extends Entity{constructor(str){const x=Math.random()*canvas.width;super(x,-20,30,30);this.follow=false;this.hp=20+str*5;this.shootDelay=1000;this.shootCd=this.shootDelay;}}
 class Bullet extends Entity{constructor(x,y,vx,vy,size,damage,owner){super(x,y,size,size);this.vx=vx;this.vy=vy;this.damage=damage;this.owner=owner;}}
+class Particle extends Entity{
+  constructor(x,y,vx,vy,life,color){super(x,y,2,2);this.vx=vx;this.vy=vy;this.life=life;this.maxLife=life;this.color=color;}
+}
 class Upgrade{constructor(name,desc,apply){this.name=name;this.desc=desc;this.apply=apply;}}
 const upgrades=[
   new Upgrade('Catalyst','Projectile Damage +2',p=>p.projDmg+=2),
@@ -73,6 +89,14 @@ const upgrades=[
 const player=new Player();
 const bullets=[];const enemies=[];const enemyBullets=[];let spawnTimer=0;let score=0;
 const ground=[{x:0,y:560,w:200,h:40},{x:200,y:520,w:200,h:80},{x:400,y:480,w:200,h:120},{x:600,y:440,w:200,h:160}];
+
+function spawnParticles(x,y,color,count=8){
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=Math.random()*3+1;
+    particles.push(new Particle(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,600,color));
+  }
+}
 function spawnEnemy(){const str=Math.floor(score/100);enemies.push(new Enemy(str));}
 function update(dt){player.inv=Math.max(0,player.inv-dt);player.shootCd=Math.max(0,player.shootCd-dt);
   if(keys['a'])player.vx=-player.speed;else if(keys['d'])player.vx=player.speed;else player.vx=0;
@@ -82,6 +106,7 @@ function update(dt){player.inv=Math.max(0,player.inv-dt);player.shootCd=Math.max
   collidePlayer();
   bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});
   enemyBullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});
+  particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.life-=dt;if(p.life<=0)particles.splice(i,1);});
   enemies.forEach(e=>{if(!e.follow){e.y+=2;if(e.y>canvas.height*0.7)e.follow=true;}else{const dx=player.x-e.x;e.x+=dx*0.02;}e.shootCd-=dt;if(e.shootCd<=0){shootEnemy(e);e.shootCd=e.shootDelay;}});
   handleCollisions();
   spawnTimer-=dt;if(spawnTimer<=0){spawnEnemy();spawnTimer=2000-Math.min(score,1500);}
@@ -89,14 +114,64 @@ function update(dt){player.inv=Math.max(0,player.inv-dt);player.shootCd=Math.max
 function collidePlayer(){player.onGround=false;ground.forEach(g=>{if(rectIntersect(player,g)){player.y=g.y-player.h;player.vy=0;player.onGround=true;}});if(player.x<0)player.x=0;if(player.x>canvas.width-player.w)player.x=canvas.width-player.w;if(player.y>canvas.height){player.y=0;}}
 function rectIntersect(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function handleCollisions(){
- bullets.forEach((b,i)=>{enemies.forEach((e,j)=>{if(rectIntersect(b,e)){e.hp-=player.projDmg;bullets.splice(i,1);if(e.hp<=0)killEnemy(j);}});});
- enemyBullets.forEach((b,i)=>{if(rectIntersect(b,player)&&player.inv<=0){player.hp-=10;player.inv=500;enemyBullets.splice(i,1);if(player.hp<=0){alert('Game Over');location.reload();}}});
- enemies.forEach((e,j)=>{if(player.bodyDmg&&rectIntersect(e,player)){e.hp-=player.bodyDmg;if(e.hp<=0)killEnemy(j);}});
+ bullets.forEach((b,i)=>{
+   enemies.forEach((e,j)=>{
+     if(rectIntersect(b,e)){
+       spawnParticles(b.x,b.y,'yellow');
+       e.hp-=player.projDmg;
+       bullets.splice(i,1);
+       if(e.hp<=0)killEnemy(j);
+     }
+   });
+ });
+ enemyBullets.forEach((b,i)=>{
+   if(rectIntersect(b,player)&&player.inv<=0){
+     spawnParticles(b.x,b.y,'red');
+     player.hp-=10;player.inv=500;
+     enemyBullets.splice(i,1);
+     if(player.hp<=0){alert('Game Over');location.reload();}
+   }
+ });
+ enemies.forEach((e,j)=>{
+   if(player.bodyDmg&&rectIntersect(e,player)){
+     e.hp-=player.bodyDmg;
+     if(e.hp<=0)killEnemy(j);
+   }
+ });
 }
-function killEnemy(i){score+=10;player.exp+=20;enemies.splice(i,1);if(player.exp>=player.expToLevel){player.exp-=player.expToLevel;player.level++;player.expToLevel=Math.floor(player.expToLevel*1.2);showUpgrades();}}
+function killEnemy(i){
+  spawnParticles(enemies[i].x,enemies[i].y,'orange',12);
+  score+=10;player.exp+=20;
+  enemies.splice(i,1);
+  if(player.exp>=player.expToLevel){
+    player.exp-=player.expToLevel;player.level++;
+    player.expToLevel=Math.floor(player.expToLevel*1.2);
+    showUpgrades();
+  }
+}
 function shootBullet(){const dx=mouse.x-(player.x+player.w/2);const dy=mouse.y-(player.y+player.h/2);const len=Math.hypot(dx,dy);const vx=dx/len*8;const vy=dy/len*8;bullets.push(new Bullet(player.x+player.w/2,player.y+player.h/2,vx,vy,player.projSize,player.projDmg,'player'));}
 function shootEnemy(e){const dx=player.x-e.x;const dy=player.y-e.y;const len=Math.hypot(dx,dy);const vx=dx/len*4;const vy=dy/len*4;enemyBullets.push(new Bullet(e.x,e.y,vx,vy,5,10,'enemy'));}
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#080';ground.forEach(g=>ctx.fillRect(g.x,g.y,g.w,g.h));ctx.fillStyle='blue';ctx.fillRect(player.x,player.y,player.w,player.h);bullets.forEach(b=>{ctx.fillStyle='yellow';ctx.fillRect(b.x,b.y,b.w,b.h);});enemyBullets.forEach(b=>{ctx.fillStyle='red';ctx.fillRect(b.x,b.y,b.w,b.h);});enemies.forEach(e=>{ctx.fillStyle='orange';ctx.fillRect(e.x,e.y,e.w,e.h);});document.getElementById('hp').textContent=` ${Math.floor(player.hp)}/${player.maxHp}`;document.getElementById('hpBar').style.width=`${player.hp/player.maxHp*100}%`;document.getElementById('exp').textContent=` ${player.exp}/${player.expToLevel}`;document.getElementById('expBar').style.width=`${player.exp/player.expToLevel*100}%`;document.getElementById('level').textContent=` ${player.level}`;document.getElementById('score').textContent=` ${score}`;}
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#080';
+  ground.forEach(g=>ctx.fillRect(g.x,g.y,g.w,g.h));
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.life/p.maxLife;
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x,p.y,2,2);
+    ctx.globalAlpha=1;
+  });
+  ctx.drawImage(playerImg,player.x,player.y,player.w,player.h);
+  bullets.forEach(b=>{ctx.fillStyle='yellow';ctx.fillRect(b.x,b.y,b.w,b.h);});
+  enemyBullets.forEach(b=>{ctx.fillStyle='red';ctx.fillRect(b.x,b.y,b.w,b.h);});
+  enemies.forEach(e=>{ctx.drawImage(enemyImg,e.x,e.y,e.w,e.h);});
+  document.getElementById('hp').textContent=` ${Math.floor(player.hp)}/${player.maxHp}`;
+  document.getElementById('hpBar').style.width=`${player.hp/player.maxHp*100}%`;
+  document.getElementById('exp').textContent=` ${player.exp}/${player.expToLevel}`;
+  document.getElementById('expBar').style.width=`${player.exp/player.expToLevel*100}%`;
+  document.getElementById('level').textContent=` ${player.level}`;
+  document.getElementById('score').textContent=` ${score}`;
+}
 let last=0;let gamePaused=true;
 function loop(t){const dt=t-last;last=t;if(!gamePaused)update(dt);draw();requestAnimationFrame(loop);}
 document.getElementById('startBtn').onclick=()=>{document.getElementById('menu').style.display='none';gamePaused=false;last=performance.now();requestAnimationFrame(loop);};
