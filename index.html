@@ -67,9 +67,9 @@ const keys={};
 let mouse={x:0,y:0,down:false};
 
 const playerImg=new Image();
-playerImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" shape-rendering="crispEdges"><rect x="8" y="2" width="24" height="8" fill="#7f2aff"/><rect x="12" y="0" width="16" height="6" fill="#7f2aff"/><rect x="14" y="10" width="12" height="8" fill="#ffcc99"/><rect x="13" y="18" width="14" height="15" fill="#0055ff"/><rect x="30" y="10" width="3" height="23" fill="#a67c52"/><rect x="29" y="6" width="5" height="4" fill="#ffef79"/></svg>`);
+playerImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" shape-rendering="crispEdges"><rect x="10" y="2" width="20" height="6" fill="#4b3fa8"/><rect x="12" y="0" width="16" height="4" fill="#6d5bd3"/><rect x="14" y="8" width="12" height="10" fill="#ffcc99"/><rect x="16" y="11" width="2" height="2" fill="#000"/><rect x="22" y="11" width="2" height="2" fill="#000"/><rect x="12" y="18" width="16" height="12" fill="#0070ff"/><rect x="10" y="20" width="4" height="10" fill="#0040aa"/><rect x="26" y="20" width="4" height="10" fill="#0040aa"/><rect x="14" y="30" width="4" height="8" fill="#6a3a1a"/><rect x="22" y="30" width="4" height="8" fill="#6a3a1a"/><rect x="14" y="38" width="4" height="2" fill="#35210a"/><rect x="22" y="38" width="4" height="2" fill="#35210a"/></svg>`);
 const enemyImg=new Image();
-enemyImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" shape-rendering="crispEdges"><polygon points="2,18 10,8 15,18" fill="#3a8c0c"/><polygon points="28,18 20,8 15,18" fill="#3a8c0c"/><polygon points="8,18 22,18 15,26" fill="#276707"/><rect x="14" y="12" width="2" height="6" fill="#276707"/><circle cx="15" cy="10" r="3" fill="#3a8c0c"/><rect x="14" y="26" width="2" height="4" fill="#276707"/><circle cx="14" cy="10" r="1" fill="#fff"/></svg>`);
+enemyImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" shape-rendering="crispEdges"><rect x="4" y="12" width="22" height="10" fill="#216d1d"/><rect x="2" y="8" width="26" height="10" fill="#3a8c0c"/><rect x="8" y="6" width="14" height="6" fill="#4bb32f"/><rect x="10" y="14" width="4" height="4" fill="#fff"/><rect x="16" y="14" width="4" height="4" fill="#fff"/><rect x="0" y="22" width="30" height="8" fill="#164e13"/></svg>`);
 const particles=[];
 document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
 document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
@@ -106,7 +106,7 @@ const player=new Player();
 const bullets=[];const enemies=[];const enemyBullets=[];let spawnTimer=0;let score=0;
 const ground=[{x:0,y:560,w:200,h:40},{x:200,y:520,w:200,h:80},{x:400,y:480,w:200,h:120},{x:600,y:440,w:200,h:160}];
 const groundTile=new Image();
-groundTile.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#764d1a"/><rect width="16" height="3" fill="#2f9e44"/><rect y="1" width="16" height="1" fill="#3fb954"/><rect x="2" y="5" width="2" height="2" fill="#5a3913"/><rect x="8" y="8" width="2" height="2" fill="#5a3913"/><rect x="4" y="12" width="2" height="2" fill="#5a3913"/><rect x="12" y="10" width="2" height="2" fill="#5a3913"/></svg>`);
+groundTile.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#6b4f1d"/><rect width="16" height="4" fill="#349c2a"/><rect y="1" width="16" height="1" fill="#3fb954"/><rect x="2" y="6" width="2" height="2" fill="#553310"/><rect x="10" y="7" width="2" height="2" fill="#553310"/><rect x="6" y="11" width="2" height="2" fill="#553310"/><rect x="12" y="9" width="2" height="2" fill="#553310"/><rect x="4" y="13" width="2" height="2" fill="#8b5e2e"/></svg>`);
 let groundPattern;
 groundTile.onload=()=>{groundPattern=ctx.createPattern(groundTile,'repeat');};
 
