@@ -11,4 +11,6 @@ node app.js
 
 Acesse `http://localhost:3000` no navegador.
 
-Um esboço de WebSocket (via Socket.IO) foi incluído para futuras implementações de matchmaking e multiplayer.
+O servidor agora conta com multiplayer online via Socket.IO. Ao escolher o modo
+"Multiplayer" no menu é possível entrar em filas de **Co-op** ou **1x1**. O
+contador de jogadores online é exibido no canto superior do menu principal.

@@ -427,6 +427,7 @@
         class MainMenuScene extends Phaser.Scene {
             constructor() {
                 super({ key: 'MainMenuScene' });
+                this.buttons = [];
             }
 
             create() {
@@ -445,30 +446,11 @@
                     fontSize: '64px', color: '#ffffff', fontFamily: 'Consolas, Courier New, monospace', stroke: '#cccccc', strokeThickness: 2
                 }).setOrigin(0.5);
 
-                // Menu Buttons
-                const modes = [
-                    { label: 'SINGLE PLAYER', mode: 'single', y: height / 2 - 40 },
-                    { label: 'CO-OP', mode: 'coop', y: height / 2 },
-                    { label: '1x1', mode: 'versus', y: height / 2 + 40 },
-                ];
-                modes.forEach(m => {
-                    const btn = this.add.text(width / 2, m.y, m.label, {
-                        fontSize: '40px',
-                        color: '#00ff99',
-                        fontFamily: 'Arial, Helvetica, sans-serif',
-                        backgroundColor: '#333333',
-                        padding: { x: 20, y: 10 }
-                    }).setOrigin(0.5).setInteractive({ cursor: 'pointer' });
-                    btn.on('pointerover', () => btn.setBackgroundColor('#555555'));
-                    btn.on('pointerout', () => btn.setBackgroundColor('#333333'));
-                    btn.on('pointerdown', () => {
-                        gameMode = m.mode;
-                        soundManager.init();
-                        soundManager.playUIClickSound();
-                        this.cameras.main.fadeOut(500, 0, 0, 0);
-                        this.time.delayedCall(500, () => this.scene.start('GameScene'));
-                    });
-                });
+                // Online counter
+                this.onlineText = this.add.text(width - 20, 20, 'Online: ' + currentOnline, { fontSize: '20px', color: '#00ff99' }).setOrigin(1,0);
+                window.updateOnlineCount = c => this.onlineText.setText('Online: ' + c);
+
+                this.showMainMenu();
 
                 // --- Evident Credits ---
                 const creditY = height - 50;
@@ -500,6 +482,72 @@
                 this.add.text(width / 2, creditY + 30, 'Crédito do original: kleekuree.itch.io/hell-breakout', {
                     fontSize: '16px', color: '#888', fontStyle: 'italic'
                 }).setOrigin(0.5);
+            }
+
+            clearButtons() {
+                this.buttons.forEach(b => b.destroy());
+                this.buttons = [];
+            }
+
+            createButtons(items) {
+                const width = this.cameras.main.width;
+                const height = this.cameras.main.height;
+                const startY = height / 2 - (items.length - 1) * 30;
+                items.forEach((m, i) => {
+                    const btn = this.add.text(width / 2, startY + i * 60, m.label, {
+                        fontSize: '40px',
+                        color: '#00ff99',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                        backgroundColor: '#333333',
+                        padding: { x: 20, y: 10 }
+                    }).setOrigin(0.5).setInteractive({ cursor: 'pointer' });
+                    btn.on('pointerover', () => btn.setBackgroundColor('#555555'));
+                    btn.on('pointerout', () => btn.setBackgroundColor('#333333'));
+                    btn.on('pointerdown', () => { soundManager.init(); soundManager.playUIClickSound(); m.action(); });
+                    this.buttons.push(btn);
+                });
+            }
+
+            showMainMenu() {
+                this.clearButtons();
+                this.createButtons([
+                    { label: 'SINGLE PLAYER', action: () => { gameMode = 'single'; this.cameras.main.fadeOut(500,0,0,0); this.time.delayedCall(500, () => this.scene.start('GameScene')); } },
+                    { label: 'MULTIPLAYER', action: () => this.showMultiplayerMenu() }
+                ]);
+            }
+
+            showMultiplayerMenu() {
+                this.clearButtons();
+                this.createButtons([
+                    { label: 'CO-OP', action: () => this.startMatchmaking('coop') },
+                    { label: '1x1', action: () => this.startMatchmaking('versus') },
+                    { label: 'VOLTAR', action: () => this.showMainMenu() }
+                ]);
+            }
+
+            startMatchmaking(mode) {
+                this.clearButtons();
+                const width = this.cameras.main.width;
+                const height = this.cameras.main.height;
+                const txt = this.add.text(width / 2, height / 2, 'Buscando partida...', { fontSize: '32px', color: '#00ff99' }).setOrigin(0.5);
+                const cancel = this.add.text(width / 2, height / 2 + 50, 'Cancelar', { fontSize: '28px', color: '#00ff99', backgroundColor: '#333333', padding:{x:20,y:10} }).setOrigin(0.5).setInteractive({ cursor: 'pointer' });
+                cancel.on('pointerover', () => cancel.setBackgroundColor('#555555'));
+                cancel.on('pointerout', () => cancel.setBackgroundColor('#333333'));
+                cancel.on('pointerdown', () => {
+                    socket.emit('cancelMatch');
+                    txt.destroy(); cancel.destroy();
+                    this.showMultiplayerMenu();
+                });
+
+                socket.emit('findMatch', { mode });
+                const onMatch = data => {
+                    socket.off('matchFound', onMatch);
+                    txt.destroy(); cancel.destroy();
+                    gameMode = data.mode;
+                    this.cameras.main.fadeOut(500,0,0,0);
+                    this.time.delayedCall(500, () => this.scene.start('GameScene'));
+                };
+                socket.on('matchFound', onMatch);
             }
         }
 
