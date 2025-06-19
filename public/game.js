@@ -1,5 +1,5 @@
-import * as THREE from 'https://unpkg.com/three@0.156.1/build/three.module.js';
-import { PointerLockControls } from 'https://unpkg.com/three@0.156.1/examples/jsm/controls/PointerLockControls.js';
+import * as THREE from './three.module.js';
+import { PointerLockControls } from './jsm/controls/PointerLockControls.js';
 
 let scene, camera, renderer, controls, cube, clock;
 
