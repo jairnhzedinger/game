@@ -1,3 +1,6 @@
+import * as THREE from 'https://unpkg.com/three@0.156.1/build/three.module.js';
+import { PointerLockControls } from 'https://unpkg.com/three@0.156.1/examples/jsm/controls/PointerLockControls.js';
+
 let scene, camera, renderer, controls, cube, clock;
 
 function init() {
@@ -19,7 +22,7 @@ function init() {
 
   camera.position.z = 5;
 
-  controls = new THREE.PointerLockControls(camera, document.body);
+  controls = new PointerLockControls(camera, document.body);
   document.body.addEventListener('click', () => controls.lock());
 
   clock = new THREE.Clock();
