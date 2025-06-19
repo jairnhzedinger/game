@@ -1,6 +1,6 @@
 # Jogo
 
-Este projeto agora utiliza Node.js com Express e EJS para servir o jogo "Sobrevivente Monocromático".
+Este projeto agora utiliza Node.js com Express e EJS para servir o jogo "Neon Odyssey".
 
 ## Como executar
 
