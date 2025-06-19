@@ -4,39 +4,84 @@
 <meta charset="UTF-8">
 <title>Simple Sidescroller Game</title>
 <style>
-  body { margin:0; overflow:hidden; background:#111; color:#fff; font-family:Arial, sans-serif; }
-  canvas { background:linear-gradient(#222,#444); display:block; margin:0 auto; border:2px solid #555; }
+  body {
+    margin:0;
+    overflow:hidden;
+    background:#1b1e26;
+    color:#f0f0f0;
+    font-family:"Segoe UI", Tahoma, sans-serif;
+  }
+  canvas {
+    background:linear-gradient(#2b2f3a,#1b1e26);
+    display:block;
+    margin:0 auto;
+    border:4px solid #333;
+  }
   #viewport { position:relative; width:800px; margin:0 auto; }
   #ui {
     position:absolute;
-    top:10px; left:50%;
+    top:20px;
+    left:50%;
     transform:translateX(-50%);
-    background:rgba(0,0,0,0.5);
-    padding:8px 12px;
-    border-radius:8px;
-    font-size:14px;
+    background:rgba(0,0,0,0.6);
+    padding:10px 20px;
+    border-radius:12px;
+    font-size:16px;
     display:flex;
-    gap:10px;
+    align-items:center;
+    gap:20px;
+    box-shadow:0 0 10px rgba(0,0,0,0.7);
   }
-  #upgradeContainer, #menu {
+  #ui .bar {
+    background:#555;
+    width:200px;
+    height:12px;
+    border-radius:6px;
+    overflow:hidden;
+  }
+  #ui .bar div { height:100%; }
+  #upgradeContainer,
+  #menu {
     position:absolute;
-    top:50%; left:50%; transform:translate(-50%,-50%);
-    background:#222; color:#fff; padding:20px; border:2px solid #fff;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#222;
+    color:#fff;
+    padding:20px 30px;
+    border:2px solid #fff;
+    text-align:center;
+    box-shadow:0 0 15px rgba(0,0,0,0.8);
   }
   #upgradeContainer { display:none; width:80%; }
   #upgradeContainer .upgrade-cards {
-    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
   }
   .upgrade-card {
-    background:#333; border:2px solid #fff; border-radius:8px;
-    padding:10px; width:160px; cursor:pointer; text-align:center;
+    background:#333;
+    border:2px solid #fff;
+    border-radius:8px;
+    padding:10px;
+    width:160px;
+    cursor:pointer;
+    text-align:center;
   }
   .upgrade-card:hover { background:#555; }
   .upgrade-card h4 { margin:0 0 8px; font-size:18px; }
   .upgrade-card p { margin:0; font-size:14px; }
   #menu button {
-    display:block; margin:5px 0; padding:8px 12px; font-size:16px;
-    background:#444; color:#fff; border:none; cursor:pointer;
+    display:block;
+    margin:10px auto 0;
+    padding:10px 20px;
+    font-size:18px;
+    background:#444;
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    border-radius:6px;
   }
   #menu button:hover { background:#666; }
 </style>
@@ -46,13 +91,9 @@
 <canvas id="game"></canvas>
 <div id="ui">
   <div>HP:<span id="hp"></span></div>
-  <div style="background:#555; width:200px; height:10px;">
-    <div id="hpBar" style="background:#f44; height:100%; width:100%;"></div>
-  </div>
+  <div class="bar"><div id="hpBar" style="background:#f44; width:100%"></div></div>
   <div>EXP:<span id="exp"></span></div>
-  <div style="background:#555; width:200px; height:10px;">
-    <div id="expBar" style="background:#4f4; height:100%; width:0;"></div>
-  </div>
+  <div class="bar"><div id="expBar" style="background:#4f4; width:0"></div></div>
   <div>Level:<span id="level"></span></div>
   <div>Score:<span id="score"></span></div>
 </div>
@@ -104,11 +145,38 @@ const upgrades=[
 ];
 const player=new Player();
 const bullets=[];const enemies=[];const enemyBullets=[];let spawnTimer=0;let score=0;
-const ground=[{x:0,y:560,w:200,h:40},{x:200,y:520,w:200,h:80},{x:400,y:480,w:200,h:120},{x:600,y:440,w:200,h:160}];
+let ground=[];
 const groundTile=new Image();
 groundTile.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#6b4f1d"/><rect width="16" height="4" fill="#349c2a"/><rect y="1" width="16" height="1" fill="#3fb954"/><rect x="2" y="6" width="2" height="2" fill="#553310"/><rect x="10" y="7" width="2" height="2" fill="#553310"/><rect x="6" y="11" width="2" height="2" fill="#553310"/><rect x="12" y="9" width="2" height="2" fill="#553310"/><rect x="4" y="13" width="2" height="2" fill="#8b5e2e"/></svg>`);
 let groundPattern;
 groundTile.onload=()=>{groundPattern=ctx.createPattern(groundTile,'repeat');};
+
+function generateGround(){
+  ground.length=0;
+  const segW=200;
+  let y=canvas.height-40;
+  for(let x=0;x<canvas.width;x+=segW){
+    if(x>0){
+      y+=Math.random()*80-40;
+      const maxY=canvas.height-40;
+      const minY=canvas.height-200;
+      y=Math.max(minY,Math.min(maxY,y));
+    }
+    ground.push({x,y,w:segW,h:canvas.height-y});
+  }
+}
+
+function initGame(){
+  Object.assign(player,new Player());
+  bullets.length=0;
+  enemies.length=0;
+  enemyBullets.length=0;
+  spawnTimer=0;
+  score=0;
+  generateGround();
+  const seg=ground.find(g=>player.x>=g.x&&player.x<g.x+g.w)||ground[0];
+  player.y=seg.y-player.h-1;
+}
 
 function spawnParticles(x,y,color,count=8){
   for(let i=0;i<count;i++){
@@ -194,7 +262,13 @@ function draw(){
 }
 let last=0;let gamePaused=true;
 function loop(t){const dt=t-last;last=t;if(!gamePaused)update(dt);draw();requestAnimationFrame(loop);}
-document.getElementById('startBtn').onclick=()=>{document.getElementById('menu').style.display='none';gamePaused=false;last=performance.now();requestAnimationFrame(loop);};
+document.getElementById('startBtn').onclick=()=>{
+  initGame();
+  document.getElementById('menu').style.display='none';
+  gamePaused=false;
+  last=performance.now();
+  requestAnimationFrame(loop);
+};
 function showUpgrades(){
   gamePaused=true;mouse.down=false;
   const cont=document.getElementById('upgradeContainer');
