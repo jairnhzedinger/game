@@ -4,10 +4,20 @@
 <meta charset="UTF-8">
 <title>Simple Sidescroller Game</title>
 <style>
-  body { margin:0; overflow:hidden; background:#222; }
-  #ui { position:absolute; top:10px; left:10px; color:white; font-family:sans-serif; }
-  #upgradeContainer { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#333; color:#fff; padding:20px; display:none; }
-  #upgradeContainer button { display:block; margin:5px 0; }
+  body { margin:0; overflow:hidden; background:#111; color:#fff; font-family:Arial, sans-serif; }
+  canvas { background:linear-gradient(#222, #555); display:block; margin:0 auto; border:2px solid #555; }
+  #ui { position:absolute; top:10px; left:10px; color:white; }
+  #upgradeContainer, #menu {
+    position:absolute;
+    top:50%; left:50%; transform:translate(-50%,-50%);
+    background:#222; color:#fff; padding:20px; border:2px solid #fff;
+  }
+  #upgradeContainer { display:none; }
+  #upgradeContainer button, #menu button {
+    display:block; margin:5px 0; padding:8px 12px; font-size:16px;
+    background:#444; color:#fff; border:none; cursor:pointer;
+  }
+  #upgradeContainer button:hover, #menu button:hover { background:#666; }
 </style>
 </head>
 <body>
@@ -21,8 +31,11 @@
   <div style="background:#555; width:200px; height:10px;">
     <div id="expBar" style="background:#4f4; height:100%; width:0;"></div>
   </div>
+  <div>Level:<span id="level"></span></div>
+  <div>Score:<span id="score"></span></div>
 </div>
 <div id="upgradeContainer"></div>
+<div id="menu"><h1>Sidescroller</h1><button id="startBtn">Start Game</button></div>
 <script>
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
@@ -83,9 +96,11 @@ function handleCollisions(){
 function killEnemy(i){score+=10;player.exp+=20;enemies.splice(i,1);if(player.exp>=player.expToLevel){player.exp-=player.expToLevel;player.level++;player.expToLevel=Math.floor(player.expToLevel*1.2);showUpgrades();}}
 function shootBullet(){const dx=mouse.x-(player.x+player.w/2);const dy=mouse.y-(player.y+player.h/2);const len=Math.hypot(dx,dy);const vx=dx/len*8;const vy=dy/len*8;bullets.push(new Bullet(player.x+player.w/2,player.y+player.h/2,vx,vy,player.projSize,player.projDmg,'player'));}
 function shootEnemy(e){const dx=player.x-e.x;const dy=player.y-e.y;const len=Math.hypot(dx,dy);const vx=dx/len*4;const vy=dy/len*4;enemyBullets.push(new Bullet(e.x,e.y,vx,vy,5,10,'enemy'));}
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#080';ground.forEach(g=>ctx.fillRect(g.x,g.y,g.w,g.h));ctx.fillStyle='blue';ctx.fillRect(player.x,player.y,player.w,player.h);bullets.forEach(b=>{ctx.fillStyle='yellow';ctx.fillRect(b.x,b.y,b.w,b.h);});enemyBullets.forEach(b=>{ctx.fillStyle='red';ctx.fillRect(b.x,b.y,b.w,b.h);});enemies.forEach(e=>{ctx.fillStyle='orange';ctx.fillRect(e.x,e.y,e.w,e.h);});document.getElementById('hp').textContent=` ${Math.floor(player.hp)}/${player.maxHp}`;document.getElementById('hpBar').style.width=`${player.hp/player.maxHp*100}%`;document.getElementById('exp').textContent=` ${player.exp}/${player.expToLevel}`;document.getElementById('expBar').style.width=`${player.exp/player.expToLevel*100}%`;}
-let last=0;function loop(t){const dt=t-last;last=t;update(dt);draw();requestAnimationFrame(loop);}requestAnimationFrame(loop);
-function showUpgrades(){mouse.down=false;const cont=document.getElementById('upgradeContainer');cont.innerHTML='<h3>Choose an upgrade</h3>';const opts=[];while(opts.length<player.attackChoices){const u=upgrades[Math.floor(Math.random()*upgrades.length)];if(!opts.includes(u))opts.push(u);}opts.forEach(u=>{const b=document.createElement('button');b.textContent=u.name+' - '+u.desc;b.onclick=()=>{u.apply(player);cont.style.display='none';requestAnimationFrame(loop);};cont.appendChild(b);});cont.style.display='block';}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#080';ground.forEach(g=>ctx.fillRect(g.x,g.y,g.w,g.h));ctx.fillStyle='blue';ctx.fillRect(player.x,player.y,player.w,player.h);bullets.forEach(b=>{ctx.fillStyle='yellow';ctx.fillRect(b.x,b.y,b.w,b.h);});enemyBullets.forEach(b=>{ctx.fillStyle='red';ctx.fillRect(b.x,b.y,b.w,b.h);});enemies.forEach(e=>{ctx.fillStyle='orange';ctx.fillRect(e.x,e.y,e.w,e.h);});document.getElementById('hp').textContent=` ${Math.floor(player.hp)}/${player.maxHp}`;document.getElementById('hpBar').style.width=`${player.hp/player.maxHp*100}%`;document.getElementById('exp').textContent=` ${player.exp}/${player.expToLevel}`;document.getElementById('expBar').style.width=`${player.exp/player.expToLevel*100}%`;document.getElementById('level').textContent=` ${player.level}`;document.getElementById('score').textContent=` ${score}`;}
+let last=0;let gamePaused=true;
+function loop(t){const dt=t-last;last=t;if(!gamePaused)update(dt);draw();requestAnimationFrame(loop);}
+document.getElementById('startBtn').onclick=()=>{document.getElementById('menu').style.display='none';gamePaused=false;last=performance.now();requestAnimationFrame(loop);};
+function showUpgrades(){gamePaused=true;mouse.down=false;const cont=document.getElementById('upgradeContainer');cont.innerHTML='<h3>Escolha uma melhoria</h3>';const opts=[];while(opts.length<player.attackChoices){const u=upgrades[Math.floor(Math.random()*upgrades.length)];if(!opts.includes(u))opts.push(u);}opts.forEach(u=>{const b=document.createElement('button');b.textContent=u.name+' - '+u.desc;b.onclick=()=>{u.apply(player);cont.style.display='none';gamePaused=false;};cont.appendChild(b);});cont.style.display='block';}
 </script>
 </body>
 </html>
