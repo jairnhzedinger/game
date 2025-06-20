@@ -119,6 +119,15 @@
     font-size:14px;
     color:#ccc;
   }
+  /* Fade and slide animations */
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
+  @keyframes slideIn{from{transform:translate(-50%,-60%);}to{transform:translate(-50%,-50%);}}
+  @keyframes slideOut{from{transform:translate(-50%,-50%);}to{transform:translate(-50%,-60%);}}
+  .fade-in{animation:fadeIn 0.3s forwards;}
+  .fade-out{animation:fadeOut 0.3s forwards;}
+  .slide-in{animation:slideIn 0.3s forwards;}
+  .slide-out{animation:slideOut 0.3s forwards;}
 </style>
 </head>
 <body>
@@ -161,6 +170,21 @@ canvas.addEventListener('mousedown',()=>mouse.down=true);
 canvas.addEventListener('mouseup',()=>mouse.down=false);
 document.getElementById('pauseBtn').onclick=togglePause;
 document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='p')togglePause();});
+function animateShow(el){
+  el.style.display="block";
+  el.classList.remove("fade-out","slide-out");
+  el.classList.add("fade-in","slide-in");
+}
+function animateHide(el,cb){
+  el.classList.remove("fade-in","slide-in");
+  el.classList.add("fade-out","slide-out");
+  el.addEventListener("animationend",function h(){
+    el.style.display="none";
+    el.classList.remove("fade-out","slide-out");
+    el.removeEventListener("animationend",h);
+    if(cb)cb();
+  });
+}
 class Entity{constructor(x,y,w,h){this.x=x;this.y=y;this.vx=0;this.vy=0;this.w=w;this.h=h;}}
 class Player extends Entity{constructor(){super(100,500,30,40);this.speed=3;this.jump=12;this.maxHp=100;this.hp=100;this.exp=0;this.level=1;this.expToLevel=100;this.inv=0;this.shootCd=0;this.shootDelay=400;this.projDmg=10;this.projSize=5;this.attackChoices=3;}}
 class Enemy extends Entity{constructor(str){const x=Math.random()*canvas.width;super(x,-20,30,30);this.follow=false;this.hp=20+str*5;this.shootDelay=1000;this.shootCd=this.shootDelay;}}
@@ -306,13 +330,16 @@ function draw(){
 }
 let last=0;let gamePaused=true;
 function loop(t){const dt=t-last;last=t;if(!gamePaused)update(dt);draw();requestAnimationFrame(loop);}
+const menuEl=document.getElementById('menu');
 document.getElementById('startBtn').onclick=()=>{
   initGame();
-  document.getElementById('menu').style.display='none';
-  gamePaused=false;
-  document.getElementById('pauseOverlay').style.display='none';
-  last=performance.now();
-  requestAnimationFrame(loop);
+  gamePaused=true;
+  animateHide(menuEl,()=>{
+    gamePaused=false;
+    document.getElementById('pauseOverlay').style.display='none';
+    last=performance.now();
+    requestAnimationFrame(loop);
+  });
 };
 document.getElementById('fullBtn').onclick=toggleFullScreen;
 function toggleFullScreen(){
@@ -344,12 +371,12 @@ function showUpgrades(){
     const card=document.createElement('div');
     card.className='upgrade-card';
     card.innerHTML=`<h4>${u.name}</h4><p>${u.desc}</p>`;
-    card.onclick=()=>{u.apply(player);cont.style.display='none';gamePaused=false;};
+    card.onclick=()=>{u.apply(player);animateHide(cont,()=>{gamePaused=false;});};
     wrapper.appendChild(card);
   });
   cont.appendChild(wrapper);
-  cont.style.display='block';
-}
+  animateShow(cont);
+  }
 </script>
 </body>
 </html>
