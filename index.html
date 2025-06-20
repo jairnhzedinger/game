@@ -190,10 +190,19 @@ const upgrades=[
 const player=new Player();
 const bullets=[];const enemies=[];const enemyBullets=[];let spawnTimer=0;let score=0;
 let ground=[];
-const groundTile=new Image();
-groundTile.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#6b4f1d"/><rect width="16" height="4" fill="#349c2a"/><rect y="1" width="16" height="1" fill="#3fb954"/><rect x="2" y="6" width="2" height="2" fill="#553310"/><rect x="10" y="7" width="2" height="2" fill="#553310"/><rect x="6" y="11" width="2" height="2" fill="#553310"/><rect x="12" y="9" width="2" height="2" fill="#553310"/><rect x="4" y="13" width="2" height="2" fill="#8b5e2e"/></svg>`);
-let groundPattern;
-groundTile.onload=()=>{groundPattern=ctx.createPattern(groundTile,'repeat');};
+
+const groundSvgs=[
+  `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#6b4f1d"/><rect width="16" height="4" fill="#349c2a"/><rect y="1" width="16" height="1" fill="#3fb954"/><rect x="2" y="6" width="2" height="2" fill="#553310"/><rect x="10" y="7" width="2" height="2" fill="#553310"/><rect x="6" y="11" width="2" height="2" fill="#553310"/><rect x="12" y="9" width="2" height="2" fill="#553310"/><rect x="4" y="13" width="2" height="2" fill="#8b5e2e"/></svg>`,
+  `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#c8aa6b"/><rect width="16" height="4" fill="#d8c97a"/><rect y="1" width="16" height="1" fill="#e5da8e"/><rect x="2" y="6" width="2" height="2" fill="#a58b4f"/><rect x="10" y="7" width="2" height="2" fill="#a58b4f"/><rect x="6" y="11" width="2" height="2" fill="#a58b4f"/><rect x="12" y="9" width="2" height="2" fill="#a58b4f"/><rect x="4" y="13" width="2" height="2" fill="#b59b5e"/></svg>`,
+  `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#6b6b6b"/><rect width="16" height="4" fill="#ffffff"/><rect y="1" width="16" height="1" fill="#eeeeee"/><rect x="2" y="6" width="2" height="2" fill="#505050"/><rect x="10" y="7" width="2" height="2" fill="#505050"/><rect x="6" y="11" width="2" height="2" fill="#505050"/><rect x="12" y="9" width="2" height="2" fill="#505050"/><rect x="4" y="13" width="2" height="2" fill="#7f7f7f"/></svg>`
+];
+
+const groundPatterns=[];
+groundSvgs.forEach((svg,i)=>{
+  const img=new Image();
+  img.src='data:image/svg+xml,'+encodeURIComponent(svg);
+  img.onload=()=>{groundPatterns[i]=ctx.createPattern(img,'repeat');};
+});
 
 function generateGround(){
   ground.length=0;
@@ -202,11 +211,13 @@ function generateGround(){
   for(let x=0;x<canvas.width;x+=segW){
     if(x>0){
       y+=Math.random()*80-40;
+      y+=Math.random()*20-10;
       const maxY=canvas.height-40;
       const minY=canvas.height-200;
       y=Math.max(minY,Math.min(maxY,y));
     }
-    ground.push({x,y,w:segW,h:canvas.height-y});
+    const pattern=groundPatterns[Math.floor(Math.random()*groundPatterns.length)];
+    ground.push({x,y,w:segW,h:canvas.height-y,pattern});
   }
 }
 
@@ -285,8 +296,7 @@ function shootBullet(){const dx=mouse.x-(player.x+player.w/2);const dy=mouse.y-(
 function shootEnemy(e){const dx=player.x-e.x;const dy=player.y-e.y;const len=Math.hypot(dx,dy);const vx=dx/len*4;const vy=dy/len*4;enemyBullets.push(new Bullet(e.x,e.y,vx,vy,5,10,'enemy'));}
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle=groundPattern||'#080';
-  ground.forEach(g=>ctx.fillRect(g.x,g.y,g.w,g.h));
+  ground.forEach(g=>{ctx.fillStyle=g.pattern||groundPatterns[0]||'#080';ctx.fillRect(g.x,g.y,g.w,g.h);});
   particles.forEach(p=>{
     ctx.globalAlpha=p.life/p.maxLife;
     ctx.fillStyle=p.color;
