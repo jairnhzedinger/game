@@ -153,6 +153,8 @@ const playerImg=new Image();
 playerImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" shape-rendering="crispEdges"><rect x="10" y="2" width="20" height="6" fill="#4b3fa8"/><rect x="12" y="0" width="16" height="4" fill="#6d5bd3"/><rect x="14" y="8" width="12" height="10" fill="#ffcc99"/><rect x="16" y="11" width="2" height="2" fill="#000"/><rect x="22" y="11" width="2" height="2" fill="#000"/><rect x="12" y="18" width="16" height="12" fill="#0070ff"/><rect x="10" y="20" width="4" height="10" fill="#0040aa"/><rect x="26" y="20" width="4" height="10" fill="#0040aa"/><rect x="14" y="30" width="4" height="8" fill="#6a3a1a"/><rect x="22" y="30" width="4" height="8" fill="#6a3a1a"/><rect x="14" y="38" width="4" height="2" fill="#35210a"/><rect x="22" y="38" width="4" height="2" fill="#35210a"/></svg>`);
 const enemyImg=new Image();
 enemyImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" shape-rendering="crispEdges"><rect x="4" y="12" width="22" height="10" fill="#216d1d"/><rect x="2" y="8" width="26" height="10" fill="#3a8c0c"/><rect x="8" y="6" width="14" height="6" fill="#4bb32f"/><rect x="10" y="14" width="4" height="4" fill="#fff"/><rect x="16" y="14" width="4" height="4" fill="#fff"/><rect x="0" y="22" width="30" height="8" fill="#164e13"/></svg>`);
+const healthImg=new Image();
+healthImg.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" shape-rendering="crispEdges"><rect x="6" y="0" width="2" height="14" fill="#0f0"/><rect x="0" y="6" width="14" height="2" fill="#0f0"/></svg>`);
 const particles=[];
 document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
 document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
@@ -167,6 +169,12 @@ class Enemy extends Entity{constructor(str){const x=Math.random()*canvas.width;s
 class Bullet extends Entity{constructor(x,y,vx,vy,size,damage,owner){super(x,y,size,size);this.vx=vx;this.vy=vy;this.damage=damage;this.owner=owner;}}
 class Particle extends Entity{
   constructor(x,y,vx,vy,life,color){super(x,y,2,2);this.vx=vx;this.vy=vy;this.life=life;this.maxLife=life;this.color=color;}
+}
+class HealthPickup extends Entity{
+  constructor(x,y){
+    super(x,y,14,14);
+    this.life=8000;
+  }
 }
 class Upgrade{constructor(name,desc,apply){this.name=name;this.desc=desc;this.apply=apply;}}
 const upgrades=[
@@ -188,7 +196,7 @@ const upgrades=[
   new Upgrade('Overheat','Body deals 40 dmg on contact',p=>p.bodyDmg=40)
 ];
 const player=new Player();
-const bullets=[];const enemies=[];const enemyBullets=[];let spawnTimer=0;let score=0;
+const bullets=[];const enemies=[];const enemyBullets=[];const healthPickups=[];let spawnTimer=0;let score=0;
 let ground=[];
 const groundTile=new Image();
 groundTile.src='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#6b4f1d"/><rect width="16" height="4" fill="#349c2a"/><rect y="1" width="16" height="1" fill="#3fb954"/><rect x="2" y="6" width="2" height="2" fill="#553310"/><rect x="10" y="7" width="2" height="2" fill="#553310"/><rect x="6" y="11" width="2" height="2" fill="#553310"/><rect x="12" y="9" width="2" height="2" fill="#553310"/><rect x="4" y="13" width="2" height="2" fill="#8b5e2e"/></svg>`);
@@ -215,6 +223,7 @@ function initGame(){
   bullets.length=0;
   enemies.length=0;
   enemyBullets.length=0;
+  healthPickups.length=0;
   spawnTimer=0;
   score=0;
   generateGround();
@@ -238,6 +247,7 @@ function update(dt){player.inv=Math.max(0,player.inv-dt);player.shootCd=Math.max
   collidePlayer();
   bullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});
   enemyBullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});
+  healthPickups.forEach((h,i)=>{h.life-=dt;if(h.life<=0)healthPickups.splice(i,1);});
   particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.life-=dt;if(p.life<=0)particles.splice(i,1);});
   enemies.forEach(e=>{if(!e.follow){e.y+=2;if(e.y>canvas.height*0.7)e.follow=true;}else{const dx=player.x-e.x;e.x+=dx*0.02;}e.shootCd-=dt;if(e.shootCd<=0){shootEnemy(e);e.shootCd=e.shootDelay;}});
   handleCollisions();
@@ -256,23 +266,32 @@ function handleCollisions(){
      }
    });
  });
- enemyBullets.forEach((b,i)=>{
-   if(rectIntersect(b,player)&&player.inv<=0){
-     spawnParticles(b.x,b.y,'red');
-     player.hp-=10;player.inv=500;
-     enemyBullets.splice(i,1);
-     if(player.hp<=0){alert('Game Over');location.reload();}
-   }
- });
- enemies.forEach((e,j)=>{
-   if(player.bodyDmg&&rectIntersect(e,player)){
-     e.hp-=player.bodyDmg;
-     if(e.hp<=0)killEnemy(j);
-   }
+  enemyBullets.forEach((b,i)=>{
+    if(rectIntersect(b,player)&&player.inv<=0){
+      spawnParticles(b.x,b.y,'red');
+      player.hp-=10;player.inv=500;
+      enemyBullets.splice(i,1);
+      if(player.hp<=0){alert('Game Over');location.reload();}
+    }
+  });
+  healthPickups.forEach((h,i)=>{
+    if(rectIntersect(h,player)){
+      spawnParticles(h.x,h.y,'lime');
+      player.hp=Math.min(player.maxHp,player.hp+20);
+      healthPickups.splice(i,1);
+    }
+  });
+  enemies.forEach((e,j)=>{
+    if(player.bodyDmg&&rectIntersect(e,player)){
+      e.hp-=player.bodyDmg;
+      if(e.hp<=0)killEnemy(j);
+    }
  });
 }
 function killEnemy(i){
-  spawnParticles(enemies[i].x,enemies[i].y,'orange',12);
+  const e=enemies[i];
+  spawnParticles(e.x,e.y,'orange',12);
+  if(Math.random()<0.1)healthPickups.push(new HealthPickup(e.x+e.w/2-7,e.y+e.h/2-7));
   score+=10;player.exp+=20;
   enemies.splice(i,1);
   if(player.exp>=player.expToLevel){
@@ -296,6 +315,7 @@ function draw(){
   ctx.drawImage(playerImg,player.x,player.y,player.w,player.h);
   bullets.forEach(b=>{ctx.fillStyle='yellow';ctx.fillRect(b.x,b.y,b.w,b.h);});
   enemyBullets.forEach(b=>{ctx.fillStyle='red';ctx.fillRect(b.x,b.y,b.w,b.h);});
+  healthPickups.forEach(h=>ctx.drawImage(healthImg,h.x,h.y,h.w,h.h));
   enemies.forEach(e=>{ctx.drawImage(enemyImg,e.x,e.y,e.w,e.h);});
   document.getElementById('hp').textContent=` ${Math.floor(player.hp)}/${player.maxHp}`;
   document.getElementById('hpBar').style.width=`${player.hp/player.maxHp*100}%`;
