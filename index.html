@@ -263,6 +263,12 @@ function spawnParticles(x,y,color,count=8){
     particles.push(new Particle(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,600,color));
   }
 }
+let flashTimeout;
+function flashCanvas(){
+  clearTimeout(flashTimeout);
+  canvas.style.filter='brightness(1.5)';
+  flashTimeout=setTimeout(()=>canvas.style.filter='',100);
+}
 function spawnEnemy(){const str=Math.floor(score/100);enemies.push(new Enemy(str));}
 function update(dt){player.inv=Math.max(0,player.inv-dt);player.shootCd=Math.max(0,player.shootCd-dt);
   if(keys['a'])player.vx=-player.speed;else if(keys['d'])player.vx=player.speed;else player.vx=0;
@@ -284,6 +290,7 @@ function handleCollisions(){
    enemies.forEach((e,j)=>{
      if(rectIntersect(b,e)){
        spawnParticles(b.x,b.y,'yellow');
+       flashCanvas();
        e.hp-=player.projDmg;
        bullets.splice(i,1);
        if(e.hp<=0)killEnemy(j);
@@ -293,6 +300,7 @@ function handleCollisions(){
 enemyBullets.forEach((b,i)=>{
    if(rectIntersect(b,player)&&player.inv<=0){
      spawnParticles(b.x,b.y,'red');
+     flashCanvas();
      player.hp-=10;player.inv=500;
      enemyBullets.splice(i,1);
      if(player.hp<=0){showGameOver();}
@@ -300,6 +308,7 @@ enemyBullets.forEach((b,i)=>{
  });
  enemies.forEach((e,j)=>{
    if(player.bodyDmg&&rectIntersect(e,player)){
+     flashCanvas();
      e.hp-=player.bodyDmg;
      if(e.hp<=0)killEnemy(j);
    }
