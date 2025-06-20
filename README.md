@@ -1,7 +1,13 @@
-# Simple Sidescroller Game
+# Jogo Sidescroller Simples
 
-This is a small HTML5 canvas game. To play, open `index.html` in your browser.
+Este projeto faz parte de um desafio proposto por **Andreyoung** no Reddit ([r/andreyoung](https://www.reddit.com/r/andreyoung/)) onde a meta era criar um jogo apenas com prompts de IA. Para isso foi utilizado o **OpenAI Codex** como ferramenta de geração de código.
 
-## Visual Update
+O resultado é um pequeno jogo em HTML5 Canvas escrito em JavaScript. Para jogar basta abrir o arquivo `index.html` em qualquer navegador moderno.
 
-The player, enemies and ground tiles now use improved pixel art SVGs. These sprites give the game a cleaner retro look without adding extra assets.
+## Características
+- Gráficos em estilo pixel art gerados via SVG
+- Sistema de upgrades e progressão por níveis
+- Controle de personagem usando teclado e mouse
+- Código produzido exclusivamente a partir de prompts enviados à IA
+
+Sinta‑se à vontade para explorar o código e personalizar o jogo.
