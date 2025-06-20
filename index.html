@@ -40,6 +40,28 @@
     overflow:hidden;
   }
   #ui .bar div { height:100%; }
+  #ui button {
+    background:#444;
+    color:#fff;
+    border:none;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  #ui button:hover { background:#666; }
+  #pauseOverlay {
+    display:none;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(0,0,0,0.8);
+    color:#fff;
+    padding:20px 40px;
+    border-radius:12px;
+    font-size:32px;
+    pointer-events:none;
+  }
   #upgradeContainer,
   #menu {
     position:absolute;
@@ -109,6 +131,7 @@
   <div class="bar"><div id="expBar" style="background:#4f4; width:0"></div></div>
   <div>Level:<span id="level"></span></div>
   <div>Score:<span id="score"></span></div>
+  <button id="pauseBtn">Pause</button>
 </div>
 <div id="upgradeContainer"></div>
 <div id="menu">
@@ -117,6 +140,7 @@
   <button id="fullBtn">Fullscreen</button>
   <p id="credits">Credits: JAIR EDINGER</p>
 </div>
+<div id="pauseOverlay">PAUSED</div>
 </div>
 <script>
 const canvas=document.getElementById('game');
@@ -135,6 +159,8 @@ document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
 canvas.addEventListener('mousedown',()=>mouse.down=true);
 canvas.addEventListener('mouseup',()=>mouse.down=false);
+document.getElementById('pauseBtn').onclick=togglePause;
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='p')togglePause();});
 class Entity{constructor(x,y,w,h){this.x=x;this.y=y;this.vx=0;this.vy=0;this.w=w;this.h=h;}}
 class Player extends Entity{constructor(){super(100,500,30,40);this.speed=3;this.jump=12;this.maxHp=100;this.hp=100;this.exp=0;this.level=1;this.expToLevel=100;this.inv=0;this.shootCd=0;this.shootDelay=400;this.projDmg=10;this.projSize=5;this.attackChoices=3;}}
 class Enemy extends Entity{constructor(str){const x=Math.random()*canvas.width;super(x,-20,30,30);this.follow=false;this.hp=20+str*5;this.shootDelay=1000;this.shootCd=this.shootDelay;}}
@@ -284,6 +310,7 @@ document.getElementById('startBtn').onclick=()=>{
   initGame();
   document.getElementById('menu').style.display='none';
   gamePaused=false;
+  document.getElementById('pauseOverlay').style.display='none';
   last=performance.now();
   requestAnimationFrame(loop);
 };
@@ -297,8 +324,13 @@ function toggleFullScreen(){
     document.exitFullscreen();
   }
 }
+function togglePause(){
+  gamePaused=!gamePaused;
+  document.getElementById('pauseOverlay').style.display=gamePaused?'block':'none';
+}
 function showUpgrades(){
   gamePaused=true;mouse.down=false;
+  document.getElementById('pauseOverlay').style.display='none';
   const cont=document.getElementById('upgradeContainer');
   cont.innerHTML='<h3>Escolha uma melhoria</h3>';
   const wrapper=document.createElement('div');
